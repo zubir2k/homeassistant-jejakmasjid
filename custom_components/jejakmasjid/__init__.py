@@ -6,7 +6,7 @@ import logging
 from homeassistant.const import Platform
 from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.event import TrackStates, async_track_state_change_filtered
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
@@ -47,9 +47,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: JejakMasjidConfigEntry) 
         if before != after:
             hass.async_create_task(coordinator.async_request_refresh())
 
-    entry.async_on_unload(
-        async_track_state_change_filtered(hass, TrackStates(domains={"person"}), _person_moved)
-    )
+    persons = hass.states.async_entity_ids("person")
+    if persons:
+        entry.async_on_unload(async_track_state_change_event(hass, persons, _person_moved))
 
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
