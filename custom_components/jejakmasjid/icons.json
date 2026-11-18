@@ -1,0 +1,14 @@
+{
+  "entity": {
+    "sensor": {
+      "nearest": { "default": "mdi:mosque" },
+      "nearest_distance": { "default": "mdi:map-marker-distance" },
+      "nearest_masjid": { "default": "mdi:mosque" },
+      "nearest_surau": { "default": "mdi:mosque-outline" },
+      "count": { "default": "mdi:map-marker-multiple" }
+    }
+  },
+  "services": {
+    "find_nearby": { "service": "mdi:map-search" }
+  }
+}

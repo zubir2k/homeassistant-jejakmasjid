@@ -1,0 +1,28 @@
+{
+  "domain": "jejakmasjid",
+  "name": "Jejak Masjid",
+  "after_dependencies": [
+    "lovelace"
+  ],
+  "categories": [
+    "productivity_information.calendars_todos"
+  ],
+  "codeowners": [
+    "@zubir2k"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "frontend",
+    "http",
+    "person",
+    "zone"
+  ],
+  "documentation": "https://github.com/zubir2k/homeassistant-jejakmasjid",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/zubir2k/homeassistant-jejakmasjid/issues",
+  "quality_scale": "silver",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.3.1"
+}

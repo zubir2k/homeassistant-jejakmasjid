@@ -1,0 +1,44 @@
+find_nearby:
+  fields:
+    entity_id:
+      selector:
+        entity:
+          domain:
+            - person
+            - device_tracker
+            - zone
+    latitude:
+      selector:
+        number:
+          min: -90
+          max: 90
+          step: any
+    longitude:
+      selector:
+        number:
+          min: -180
+          max: 180
+          step: any
+    radius:
+      default: 3
+      selector:
+        number:
+          min: 1
+          max: 5
+          unit_of_measurement: km
+    type:
+      selector:
+        select:
+          translation_key: place_type
+          options:
+            - masjid
+            - surau
+            - madrasah
+            - other
+    limit:
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 100
+          mode: box

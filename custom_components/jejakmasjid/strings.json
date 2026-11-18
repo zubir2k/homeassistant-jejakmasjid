@@ -1,0 +1,108 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Nearby masjid and surau for every person with GPS location and for your Home zone, from the Jejak Masjid community map.",
+        "data": {
+          "radius": "Search radius",
+          "scan_interval": "Update interval"
+        },
+        "data_description": {
+          "radius": "How far around each person and Home to look, in km (1 to 5; Jejak Masjid caps searches at 5 km).",
+          "scan_interval": "How often, in minutes, to check where everyone is. Jejak Masjid is only asked again when someone leaves the area of an earlier search (up to 5 km wide, shared by everyone) or it is a day old."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach Jejak Masjid. Check your internet connection and try again."
+    },
+    "abort": {
+      "already_configured": "Jejak Masjid is already set up. Only one instance is allowed.",
+      "single_instance_allowed": "Jejak Masjid is already set up. Only one instance is allowed."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Jejak Masjid options",
+        "data": {
+          "radius": "Search radius",
+          "scan_interval": "Update interval"
+        },
+        "data_description": {
+          "radius": "How far around each person and Home to look, in km (1 to 5; Jejak Masjid caps searches at 5 km).",
+          "scan_interval": "How often, in minutes, to check where everyone is. Jejak Masjid is only asked again when someone leaves the area of an earlier search (up to 5 km wide, shared by everyone) or it is a day old."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "nearest": {
+        "name": "{who} nearest masjid or surau"
+      },
+      "nearest_distance": {
+        "name": "{who} nearest distance"
+      },
+      "nearest_masjid": {
+        "name": "{who} nearest masjid"
+      },
+      "nearest_surau": {
+        "name": "{who} nearest surau"
+      },
+      "count": {
+        "name": "{who} places nearby"
+      }
+    }
+  },
+  "selector": {
+    "place_type": {
+      "options": {
+        "masjid": "Masjid",
+        "surau": "Surau",
+        "madrasah": "Madrasah",
+        "other": "Other"
+      }
+    }
+  },
+  "services": {
+    "find_nearby": {
+      "name": "Find nearby",
+      "description": "Lists the masjid and surau around a person, zone or point, nearest first.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity",
+          "description": "Person, device tracker or zone to search around. Defaults to Home."
+        },
+        "latitude": {
+          "name": "Latitude",
+          "description": "Search around this point instead of an entity."
+        },
+        "longitude": {
+          "name": "Longitude",
+          "description": "Search around this point instead of an entity."
+        },
+        "radius": {
+          "name": "Radius",
+          "description": "Search radius in km (1 to 5)."
+        },
+        "type": {
+          "name": "Type",
+          "description": "Only return this kind of place."
+        },
+        "limit": {
+          "name": "Limit",
+          "description": "Maximum number of places to return."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_location": {
+      "message": "{entity_id} has no GPS location."
+    },
+    "cannot_connect": {
+      "message": "Could not reach Jejak Masjid."
+    }
+  }
+}
