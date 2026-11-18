@@ -66,5 +66,5 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_FIND_NEARBY,
         _find_nearby,
         schema=SCHEMA,
-        supports_response=SupportsResponse.ONLY,
+        supports_response=SupportsResponse.OPTIONAL,
     )
