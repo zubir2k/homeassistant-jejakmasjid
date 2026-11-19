@@ -31,7 +31,7 @@ rules:
   reauthentication-flow:
     status: exempt
     comment: Public API, no credentials.
-  test-coverage: todo
+  test-coverage: done
   # Gold
   devices: done                   # one service device
   diagnostics: done               # locations redacted
