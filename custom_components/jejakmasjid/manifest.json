@@ -2,7 +2,10 @@
   "domain": "jejakmasjid",
   "name": "Jejak Masjid",
   "after_dependencies": [
-    "lovelace"
+    "frontend",
+    "lovelace",
+    "person",
+    "zone"
   ],
   "categories": [
     "productivity_information.calendars_todos"
@@ -12,10 +15,7 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "frontend",
-    "http",
-    "person",
-    "zone"
+    "http"
   ],
   "documentation": "https://github.com/zubir2k/homeassistant-jejakmasjid",
   "integration_type": "service",
