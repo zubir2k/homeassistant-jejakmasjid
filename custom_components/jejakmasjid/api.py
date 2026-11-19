@@ -32,6 +32,20 @@ _TYPES = (
 )
 
 
+def _type_from_payload(raw: Any) -> str | None:
+    """Map the API's own type field to ours, if it sends one; None when absent or unknown."""
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    value = raw.strip().lower()
+    if re.search(r"masjid|mosque", value):
+        return "masjid"
+    if re.search(r"surau|musolla|musalla|musolah|prayer|solat", value):
+        return "surau"
+    if re.search(r"madrasah?", value):
+        return "madrasah"
+    return "other"
+
+
 def place_type(name: str) -> str:
     """Masjid, surau, madrasah or other, from the place name (the API has no type field)."""
     for kind, pattern in _TYPES:
@@ -58,7 +72,7 @@ def parse_places(payload: Any) -> list[dict[str, Any]]:
                 {
                     "id": str(props["id"]),
                     "name": name,
-                    "type": place_type(name),
+                    "type": _type_from_payload(props.get("type")) or place_type(name),
                     "latitude": float(lat),
                     "longitude": float(lon),
                     "kursus_haji": bool(props.get("has_kursus_asas_haji")),

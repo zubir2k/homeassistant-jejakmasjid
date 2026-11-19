@@ -49,3 +49,22 @@ async def test_sensors_created_and_updated(hass: HomeAssistant, mock_fetch_nearb
     count_state = hass.states.get(count_id)
     assert count_state is not None
     assert count_state.state == "2"
+
+
+async def test_person_added_after_setup_is_tracked(hass: HomeAssistant, mock_fetch_nearby) -> None:
+    """A person created after setup still triggers a refresh when they move."""
+    hass.states.async_set("zone.home", "0", {"latitude": 3.02192, "longitude": 101.79148})
+    entry = MockConfigEntry(domain=DOMAIN, title="Jejak Masjid", unique_id=DOMAIN, data={})
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.jejakmasjid.card_registration.async_register_card"):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    coordinator = entry.runtime_data
+    with patch.object(coordinator, "async_request_refresh") as refresh:
+        hass.states.async_set("person.late", "home", {"latitude": 3.10, "longitude": 101.70})
+        await hass.async_block_till_done()
+        hass.states.async_set("person.late", "not_home", {"latitude": 3.15, "longitude": 101.75})
+        await hass.async_block_till_done()
+        assert refresh.called
