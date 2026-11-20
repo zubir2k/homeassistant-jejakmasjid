@@ -1,22 +1,33 @@
-![JejakMasjid](/custom_components/jejakmasjid/brand/logo.png)
+<img src="custom_components/jejakmasjid/brand/logo.png" alt="Jejak Masjid" height="180" align="right">
+
+# 🕌 Jejak Masjid: Mosque Tracker
 
 [![GitHub Repo stars](https://img.shields.io/github/stars/zubir2k/homeassistant-jejakmasjid?style=social)](https://github.com/zubir2k/homeassistant-jejakmasjid/stargazers)
 [![hacs_badge](https://img.shields.io/badge/HACS-Integration-41BDF5.svg)](https://github.com/hacs/integration)
 [![Buy](https://img.shields.io/badge/Belanja-Coffee-yellow.svg)](https://zubirco.de/buymecoffee)
 [![GitHub Release](https://img.shields.io/github/release/zubir2k/homeassistant-jejakmasjid.svg)](https://github.com/zubir2k/homeassistant-jejakmasjid/releases/)
 
-An **unofficial**, community-built Home Assistant custom integration for [Jejak Masjid](https://jejakmasjid.my). Track and discover nearby masjid, surau, and madrasah for every family member with GPS location and for your Home zone. Includes a bundled, interactive Lovelace Leaflet map card with one-tap driving directions.
+An **unofficial**, community-built Home Assistant custom integration for [Jejak Masjid](https://jejakmasjid.my/en). Track and discover nearby masjid, surau, and madrasah for every family member with GPS location and for your Home zone. Includes a bundled, interactive Lovelace Leaflet map card with one-tap driving directions and app check-in support.
 
 ---
 
-## Features
+## What is Jejak Masjid 🔍
+
+Jejak Masjid is a free app for finding mosques and surau near you, at home or on your travels. Check prayer times and keep a record of every visit.
+
+<a href="https://apps.apple.com/my/app/jejak-masjid-masjid-journey/id6757920248"><img src="https://jejakmasjid.my/app-store-badge.svg" height="40"></a>&nbsp;<a href="https://play.google.com/store/apps/details?id=my.lonasoft.jejakmasjidmobile"><img src="https://jejakmasjid.my/play-store-badge.svg" height="40"></a>
+
+---
+
+## Integration Features
 
 - **Dynamic Person & Home Tracking**: Automatically monitors GPS coordinates from every active `person` entity as well as `zone.home`.
-- **Bundled Lovelace Map Card**: Includes a built-in, zero-setup Leaflet map card (`custom:jejakmasjid-card`) with live pins, type filters (Masjid, Surau, Madrasah), distance badges, and direct navigation links to Google Maps.
+- **Bundled Lovelace Map Card**: Includes a built-in, zero-setup Leaflet map card (`custom:jejakmasjid-card`) with live pins, type filters (Masjid, Surau, Madrasah), distance badges, one-tap navigation, and Jejak Masjid app check-in.
 - **Comprehensive Sensor Suite**: Exposes dedicated sensors for nearest place name, distance in kilometers, dedicated masjid and surau entities, and aggregate counts within radius.
 - **Actionable Service (`find_nearby`)**: Query places around any person, zone, or custom GPS coordinates with configurable limits and type filters for automations and voice assistants.
 - **Privacy-Conscious Caching**: GPS coordinates are rounded to ~110m (3 decimal places) before querying the public API; searches are cached locally (`.storage`) and shared across family members to minimize upstream requests.
-- **Zero Database Bloat (ADR-0018)**: Employs `_unrecorded_attributes` to prevent the large list of nearby places from bloating the Home Assistant Recorder database.
+- **Zero Database Bloat**: Employs `_unrecorded_attributes` to prevent the large list of nearby places from bloating the Home Assistant Recorder database.
+- **Standardized Client Library**: Powered by the standalone [`python-jejakmasjid`](https://pypi.org/project/python-jejakmasjid/) package on PyPI conforming strictly to Home Assistant ADR-0020.
 
 ---
 
@@ -28,7 +39,7 @@ An **unofficial**, community-built Home Assistant custom integration for [Jejak 
 
 > [!TIP]
 > If you are unable to use the button above:
-> 1. In Home Assistant, open **HACS → Integrations**.
+> 1. In Home Assistant, open **Marketplace/HACS → Integrations**.
 > 2. Click the three dots in the top-right corner and select **Custom repositories**.
 > 3. Add `https://github.com/zubir2k/homeassistant-jejakmasjid` with category **Integration**.
 > 4. Search for `Jejak Masjid` and click **Download**.
@@ -81,13 +92,20 @@ type: custom:jejakmasjid-card
 entity: person.zubir
 ```
 
+![jejakmasjid-card](https://github.com/user-attachments/assets/661b901c-4e35-41f1-8661-31d0d6a9669d)
+
 ### Card Options
 
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `entity` | `string` | *(First available sensor)* | Any `person` entity or `zone.home`. |
-| `default_filter` | `string` | `all` | Initial filter: `all`, `masjid`, `surau`, `other`. |
-| `height` | `string` | `400px` | Height of the map canvas. |
+| `filter` | `string` | `all` | Initial filter: `all`, `masjid`, `surau`, `other`. |
+| `show_map` | `boolean` | `true` | Show/hide the interactive map canvas. |
+| `map_height` | `number` | `360` | Height of the map in pixels. |
+| `max_items` | `number` | `8` | Number of nearby places shown in the list. |
+| `show_checkin` | `boolean` | `true` | Show direct "Check in" action to open the Jejak Masjid mobile app. |
+| `checkin_radius_m` | `number` | `50` | Proximity radius (meters) before check-in button becomes active. |
+| `language` | `string` | `auto` | UI language: `auto` (follows HA), `en` (English), or `ms` (Bahasa Melayu). |
 
 ---
 
@@ -118,18 +136,24 @@ data:
 
 ---
 
-## Architecture & Standards Compliance
+## Credits & Attribution
 
-This integration is built in strict accordance with the Home Assistant Architecture Decision Records (ADRs):
+- **[Jejak Masjid](https://jejakmasjid.my/)** (Lonasoft): Heartfelt thanks to the **Jejak Masjid team & developer** for their dedication to the Muslim community across Malaysia, and for graciously supporting and providing dedicated API access to empower Home Assistant users.
+- **Mobile Apps**: If you find this integration useful, please download and support the official Jejak Masjid mobile app on [iOS App Store](https://apps.apple.com/my/app/jejak-masjid-masjid-journey/id6757920248) and [Google Play Store](https://play.google.com/store/apps/details?id=my.lonasoft.jejakmasjidmobile).
+- **Leaflet & OpenStreetMap**: Interactive map visualisations powered by [Leaflet](https://leafletjs.com/) and [OpenStreetMap](https://www.openstreetmap.org/) contributors.
 
-- **ADR-0003**: Exposes all sensor data directly; no monitored conditions selectors.
-- **ADR-0004**: Pure REST GeoJSON communication; zero webscraping.
-- **ADR-0007 / ADR-0010**: Modern UI Config Flow and Options Flow; no YAML integration schemas. Single-instance unique ID abort guard enforced.
-- **ADR-0008**: Mandatory code ownership declared in `manifest.json`.
-- **ADR-0009**: Complete translations for config, options, entity names, and exceptions without hardcoded entity IDs.
-- **ADR-0018**: Database protection using `_unrecorded_attributes` for nearby place lists.
-- **ADR-0020**: Modern Python 3.12+ syntax and type annotations.
-- **ADR-0022**: Adheres to the Home Assistant Integration Quality Scale.
+---
+
+## Disclaimer
+
+This is an **unofficial, community-developed** integration. While built with the gracious blessing and API support from the Jejak Masjid developer, it is not an official product of or formally affiliated with Lonasoft. Please do not contact the Jejak Masjid app support team for Home Assistant integration issues — open an issue on this repository instead.
+
+---
+
+## Join the Community
+
+- 🇲🇾 **Home Assistant Malaysia**: Join our local smart home discussions on [Facebook - Home Assistant Malaysia](https://www.facebook.com/groups/homeassistantmalaysia)
+- 💬 **Home Assistant Community**: Share automations and feedback on the official [Home Assistant Community Forum](https://community.home-assistant.io/)
 
 ---
 
