@@ -138,8 +138,7 @@ data:
 
 ## Credits & Attribution
 
-- **[Jejak Masjid](https://jejakmasjid.my/)** (Lonasoft): Heartfelt thanks to the **Jejak Masjid team & developer** for their dedication to the Muslim community across Malaysia, and for graciously supporting and providing dedicated API access to empower Home Assistant users.
-- **Mobile Apps**: If you find this integration useful, please download and support the official Jejak Masjid mobile app on [iOS App Store](https://apps.apple.com/my/app/jejak-masjid-masjid-journey/id6757920248) and [Google Play Store](https://play.google.com/store/apps/details?id=my.lonasoft.jejakmasjidmobile).
+- **[Jejak Masjid](https://jejakmasjid.my/)**: Heartfelt thanks to the **Jejak Masjid team & developer** for their dedication to the Muslim community across Malaysia, and for graciously supporting and providing dedicated API access to empower Home Assistant users.
 - **Leaflet & OpenStreetMap**: Interactive map visualisations powered by [Leaflet](https://leafletjs.com/) and [OpenStreetMap](https://www.openstreetmap.org/) contributors.
 
 ---
