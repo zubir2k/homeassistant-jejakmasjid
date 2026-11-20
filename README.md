@@ -1,4 +1,4 @@
-<img src="custom_components/jejakmasjid/brand/logo.png" alt="Jejak Masjid" height="180" align="right">
+<img src="custom_components/jejakmasjid/brand/logo.png" alt="Jejak Masjid" height="90" align="right">
 
 # 🕌 Jejak Masjid: Mosque Tracker
 

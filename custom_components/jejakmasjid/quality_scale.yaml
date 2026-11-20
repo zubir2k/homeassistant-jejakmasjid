@@ -3,7 +3,7 @@ rules:
   # Bronze
   action-setup: done              # find_nearby registered in async_setup
   appropriate-polling: done       # reads HA states each interval; API only on move >300 m or 6 h
-  brands: todo                    # icon.png/logo.png pending (own art, not Jejak Masjid or HA marks)
+  brands: done
   common-modules: done            # coordinator.py, entity.py
   config-flow: done               # ADR-0010
   config-flow-test-coverage: done
