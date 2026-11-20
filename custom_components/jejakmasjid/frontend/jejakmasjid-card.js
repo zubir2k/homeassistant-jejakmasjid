@@ -15,9 +15,9 @@ const TYPES = {
 };
 const FILTERS = ["all", "masjid", "surau", "other"];
 const T = {
-  en: { all: "All", within: "within", places: "places", none: "Nothing of this type nearby.", maps: "Maps", go: "Navigate",
+  en: { checkin: "Check in", here: "You're here", nearest: "Nearest", refresh: "Refresh location", all: "All", within: "within", places: "places", none: "Nothing of this type nearby.", maps: "Maps", go: "Navigate",
         home: "Home", noData: "No Jejak Masjid sensors yet. Add the Jejak Masjid integration first.", empty: "No masjid or surau found within" },
-  ms: { all: "Semua", within: "dalam", places: "tempat", none: "Tiada tempat jenis ini berdekatan.", maps: "Peta", go: "Navigasi",
+  ms: { checkin: "Daftar masuk", here: "Anda di sini", nearest: "Terdekat", refresh: "Muat semula lokasi", all: "Semua", within: "dalam", places: "tempat", none: "Tiada tempat jenis ini berdekatan.", maps: "Peta", go: "Navigasi",
         home: "Rumah", noData: "Tiada sensor Jejak Masjid lagi. Tambah integrasi Jejak Masjid dahulu.", empty: "Tiada masjid atau surau dalam" },
 };
 const IMG = (n) => `${BASE}/img/${n}.png?v=${VERSION}`;
@@ -41,7 +41,61 @@ function loadLeaflet() {
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const mapsUrl = (p) => `https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}`;
-const navUrl = (p) => `https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}&travelmode=driving`;
+// Navigate: Android gets a geo: link, so the phone shows its own "Open with" chooser (Maps, Waze, ...);
+// iPhone/iPad gets Apple Maps; everything else falls back to Google Maps directions.
+const UA = navigator.userAgent || "";
+const IS_ANDROID = /Android/i.test(UA);
+const IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
+const navUrl = (p) =>
+  IS_ANDROID ? `geo:${p.latitude},${p.longitude}?q=${p.latitude},${p.longitude}(${encodeURIComponent(nice(p.name))})`
+  : IS_IOS ? `maps://?daddr=${p.latitude},${p.longitude}&dirflg=d`
+  : `https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}&travelmode=driving`;
+const navTarget = () => (IS_ANDROID || IS_IOS ? "_self" : "_blank");
+// iOS has no system "Open with" for directions, so the card shows its own sheet with the apps people use here.
+const iosApps = (p) => [
+  { n: "Apple Maps", u: `maps://?daddr=${p.latitude},${p.longitude}&dirflg=d` },
+  { n: "Google Maps", u: `comgooglemaps://?daddr=${p.latitude},${p.longitude}&directionsmode=driving` },
+  { n: "Waze", u: `https://waze.com/ul?ll=${p.latitude},${p.longitude}&navigate=yes` },
+];
+// Check in: hand the place to the Jejak Masjid app. {id}, {lat}, {lng}, {name} are filled in.
+const DEFAULT_CHECKIN_URI = "jejakmasjidmobile://checkin"; // app scheme from the APK (Android + iOS share it); "jejakmasjidmobile://masjid/{id}" opens the place page instead
+const checkinUrl = (tpl, p) => (tpl || DEFAULT_CHECKIN_URI)
+  .replace(/\{id\}/g, encodeURIComponent(p.id)).replace(/\{lat\}/g, p.latitude).replace(/\{lng\}/g, p.longitude)
+  .replace(/\{name\}/g, encodeURIComponent(p.name || ""));
+const STORE = {
+  android: "https://play.google.com/store/apps/details?id=my.lonasoft.jejakmasjidmobile",
+  ios: "https://apps.apple.com/my/app/id6757920248",
+  web: "https://jejakmasjid.my",
+};
+// Android: wrap the app link in an intent: URL so a phone without the app goes to Play Store.
+const androidIntent = (uri) => {
+  const m = /^([a-z][a-z0-9+.-]*):\/\/(.*)$/i.exec(uri);
+  if (!m || /^https?$/i.test(m[1])) return uri;
+  return `intent://${m[2]}#Intent;scheme=${m[1]};package=my.lonasoft.jejakmasjidmobile;S.browser_fallback_url=${encodeURIComponent(STORE.android)};end`;
+};
+// Open the app; if it didn't take over the screen within ~1.5 s, assume it isn't installed.
+function openCheckin(uri) {
+  if (IS_ANDROID) { window.location.href = androidIntent(uri); return; }
+  if (!IS_IOS) { window.open(STORE.web, "_blank", "noopener"); return; }
+  let left = false;
+  const gone = () => { left = true; };
+  document.addEventListener("visibilitychange", gone, { once: true });
+  window.addEventListener("pagehide", gone, { once: true });
+  window.location.href = uri;
+  setTimeout(() => {
+    document.removeEventListener("visibilitychange", gone);
+    window.removeEventListener("pagehide", gone);
+    if (!left && !document.hidden) window.location.href = STORE.ios;
+  }, 1500);
+}
+const distM = (a, b) => {
+  const r = Math.PI / 180, dLat = (b[0] - a[0]) * r, dLon = (b[1] - a[1]) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dLon / 2) ** 2;
+  return 12742000 * Math.asin(Math.sqrt(h));
+};
+const ICON_REFRESH = '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>';
+const ICON_LOCATE = '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 3A9 9 0 0 0 13 3.06V1h-2v2.06A9 9 0 0 0 3.06 11H1v2h2.06A9 9 0 0 0 11 20.94V23h2v-2.06A9 9 0 0 0 20.94 13H23v-2h-2.06zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg>';
+const ICON_PIN = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
 // Many names are ALL CAPS; show them in title case
 const nice = (n) => (n && n === n.toUpperCase() ? n.toLowerCase().replace(/(^|[\s\-(\/'])([a-z])/g, (m, a, b) => a + b.toUpperCase()) : n);
 const fmtKm = (km) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`);
@@ -49,8 +103,9 @@ const fmtKm = (km) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)}
 class JejakMasjidCard extends HTMLElement {
   setConfig(config) {
     this._cfg = {
-      show_map: true, map_height: 260, max_items: 8, filter: "all",
+      show_map: true, map_height: 360, max_items: 8, filter: "all",
       show_people: true, dark_tiles: "auto", language: "auto",
+      show_checkin: true, checkin_radius_m: 50, checkin_uri: DEFAULT_CHECKIN_URI,
       ...config,
     };
     this._filter = FILTERS.includes(this._cfg.filter) ? this._cfg.filter : "all";
@@ -133,7 +188,39 @@ class JejakMasjidCard extends HTMLElement {
         :host(.dark) .leaflet-marker-icon:not(.me-wrap), :host(.dark) .ic { filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff); }
         .head { display: flex; align-items: center; gap: 12px; padding: 14px 16px 6px; }
         .logo { width: 36px; height: 36px; border-radius: 10px; flex: none; }
-        .who { min-width: 0; }
+        .who { min-width: 0; flex: 1; }
+        .rf { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--divider-color, #ddd); background: none;
+          color: var(--primary-text-color); display: grid; place-items: center; cursor: pointer; padding: 0; }
+        .rf:hover { background: var(--secondary-background-color, #f1f3f3); }
+        .rf.spin svg { animation: jmspin .9s linear infinite; }
+        @keyframes jmspin { to { transform: rotate(360deg); } }
+        .ci { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: var(--jm-dark) !important; background: var(--jm-gold); }
+        .row.top { flex-wrap: wrap; background: rgba(0,169,165,.08); border: 1px solid rgba(0,169,165,.35); border-radius: 14px;
+          padding: 12px; margin: 6px 0 4px; }
+        .act .g, .act .ci, .pop-act .g, .pop-act .ci { border: 1px solid transparent; }
+        .act a, .pop-act a { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
+        .row.top, .row.top:first-child { border: 1px solid rgba(0,169,165,.35); }
+        .row.top + .row { border-top: 0; }
+        .row.top .act { width: 100%; padding-left: 40px; }
+        .row.top .act a { flex: 1; text-align: center; padding: 10px; }
+        .tag { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: var(--jm-teal); margin-bottom: 2px; }
+        .tag.here { color: var(--jm-gold); }
+        .pop-act { display: flex; gap: 8px; margin-top: 8px; }
+        .pop-act a { box-sizing: border-box; flex: 1; text-align: center; font-weight: 600; text-decoration: none; border-radius: 8px; padding: 7px 8px; font-size: 12.5px; }
+        .pop-act .m { color: #333; border: 1px solid #ccc; }
+        .pop-act .g { color: #fff; background: var(--jm-teal); }
+        .pop-act .ci { flex: 0 0 100%; box-sizing: border-box; justify-content: center; }
+        .pop-act { flex-wrap: wrap; }
+        .pop-act a, .act a { white-space: nowrap; }
+        .sheet { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; }
+        .sheet .box { width: min(480px, 100%); padding: 0 8px calc(8px + env(safe-area-inset-bottom)); box-sizing: border-box; }
+        .sheet .grp { background: rgba(250,250,250,.97); border-radius: 14px; overflow: hidden; margin-bottom: 8px; }
+        .sheet .ttl { padding: 12px 16px; text-align: center; font-size: 13px; color: #8a8a8e; border-bottom: 1px solid #ddd; }
+        .sheet a, .sheet button { display: block; width: 100%; padding: 16px; text-align: center; font: inherit; font-size: 19px; color: #007aff;
+          text-decoration: none; background: none; border: 0; border-top: 1px solid #ddd; box-sizing: border-box; }
+        .sheet .grp > :nth-child(2) { border-top: 0; }
+        .sheet button { font-weight: 600; border: 0; }
+        .pop-here { display: inline-block; font-size: 11px; font-weight: 700; color: #8a6a10; background: #fbefc9; border-radius: 6px; padding: 1px 6px; margin-top: 4px; }
         .who .lbl { font-size: 12px; color: var(--secondary-text-color); }
         .who .name { color: var(--primary-text-color); font-size: 18px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .bar { padding: 4px 16px 0; }
@@ -151,6 +238,7 @@ class JejakMasjidCard extends HTMLElement {
         .leaflet-container { background: var(--secondary-background-color, #eee); font: inherit; }
         :host(.dark) .leaflet-tile-pane { filter: invert(.9) hue-rotate(180deg) brightness(1.1) contrast(1.1) saturate(.35); }
         :host(.dark) .leaflet-control-attribution, :host(.dark) .leaflet-bar a { background: #222; color: #ccc; }
+        .loc a { display: flex; align-items: center; justify-content: center; }
         .leaflet-popup-content { margin: 10px 12px; font-size: 13px; line-height: 1.45; }
         .leaflet-popup-content b { font-size: 14px; }
         .me { width: 16px; height: 16px; border-radius: 50%; background: var(--primary-color, #03a9f4); border: 3px solid #fff;
@@ -171,7 +259,8 @@ class JejakMasjidCard extends HTMLElement {
       </style>
       <ha-card>
         <div class="head"><img class="logo" src="${IMG("brandicon")}" alt="">
-          <div class="who"><div class="lbl" id="lbl"></div><div class="name" id="name"></div></div></div>
+          <div class="who"><div class="lbl" id="lbl"></div><div class="name" id="name"></div></div>
+          <button class="rf" id="rf" title="Refresh">${ICON_REFRESH}</button></div>
         <div class="bar"><div class="chips" id="chips"></div><div class="seg" id="seg"></div></div>
         <div class="map ${c.show_map ? "" : "hidden"}" id="map"></div>
         <div class="list" id="list"></div>
@@ -186,9 +275,48 @@ class JejakMasjidCard extends HTMLElement {
       const b = e.target.closest("button");
       if (b) { this._source = b.dataset.s; this._fitted = false; this._stamp = null; this._render(); }
     });
+    $("rf").addEventListener("click", () => this._refresh());
+    this.shadowRoot.addEventListener("click", (e) => {
+      const c = e.target.closest("a.ci");
+      if (c) { e.preventDefault(); openCheckin(c.getAttribute("href")); }
+    });
+    if (IS_IOS) this.shadowRoot.addEventListener("click", (e) => {
+      const a = e.target.closest("a[data-nav]");
+      if (a) { e.preventDefault(); this._sheet(a.dataset.nav); }
+    });
     this._built = true;
     this._fitted = false;
     if (c.show_map) this._ready = loadLeaflet().then((L) => this._initMap(L)).catch(() => { $("map").classList.add("hidden"); });
+  }
+
+  // Re-run the search for the selected person or Home right now, then re-centre the map.
+  async _refresh() {
+    const b = this.shadowRoot.getElementById("rf");
+    if (!this._cur || b.classList.contains("spin")) return;
+    b.classList.add("spin");
+    try {
+      await this._hass.callService("homeassistant", "update_entity", { entity_id: this._cur.id });
+    } finally {
+      this._fitted = false; this._stamp = null;
+      setTimeout(() => { b.classList.remove("spin"); this._render(); }, 800);
+    }
+  }
+
+  _sheet(id) {
+    const p = (this._shown || []).find((x) => String(x.id) === id);
+    if (!p) return;
+    const el = document.createElement("div");
+    el.className = "sheet";
+    el.innerHTML = `<div class="box"><div class="grp"><div class="ttl">${esc(nice(p.name))}</div>${iosApps(p)
+      .map((a) => `<a href="${a.u}">${a.n}</a>`).join("")}</div><div class="grp"><button>${this._lang === "ms" ? "Batal" : "Cancel"}</button></div></div>`;
+    el.addEventListener("click", (e) => { if (e.target === el || e.target.closest("button") || e.target.closest("a")) setTimeout(() => el.remove(), 50); });
+    this.shadowRoot.appendChild(el);
+  }
+
+  // Close enough to the place to check in (live distance from the person, not the search point).
+  _atPlace(p) {
+    const o = this._cur?.origin;
+    return !!(o && this._cfg.show_checkin && this._cur.src !== "zone.home" && distM(o, [p.latitude, p.longitude]) <= Number(this._cfg.checkin_radius_m));
   }
 
   _initMap(L) {
@@ -204,6 +332,25 @@ class JejakMasjidCard extends HTMLElement {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | Jejak Masjid',
     }).addTo(this._map);
     this._layer = L.layerGroup().addTo(this._map);
+    // "My location" button under the zoom buttons: re-centres on the selected person (or Home).
+    const Locate = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd: () => {
+        const bar = L.DomUtil.create("div", "leaflet-bar leaflet-control loc");
+        const a = L.DomUtil.create("a", "", bar);
+        a.href = "#"; a.role = "button";
+        a.title = a.ariaLabel = this._lang === "ms" ? "Lokasi semasa" : "Current location";
+        a.innerHTML = ICON_LOCATE;
+        L.DomEvent.disableClickPropagation(bar);
+        L.DomEvent.on(a, "click", (e) => {
+          L.DomEvent.preventDefault(e);
+          const o = this._cur?.origin;
+          if (o) this._map.setView(o, Math.max(this._map.getZoom(), 16));
+        });
+        return bar;
+      },
+    });
+    new Locate().addTo(this._map);
     new ResizeObserver(() => {
       if (!this._map || !el.clientWidth || !el.clientHeight) return;
       // Leaflet caches the size it was created at (often 0 in the editor preview).
@@ -255,14 +402,19 @@ class JejakMasjidCard extends HTMLElement {
       (f) => `<button class="${f === this._filter ? "on" : ""}" data-f="${f}">${f === "all" ? t.all : TYPES[f][this._lang]}<span class="n">${counts[f]}</span></button>`
     ).join("");
 
+    this._cur = cur;
     $("list").innerHTML = !places.length
       ? `<div class="empty">${t.empty} ${radius} km.</div>`
       : shown.length
-        ? shown.slice(0, this._cfg.max_items).map((p) => `<div class="row">
+        ? shown.slice(0, this._cfg.max_items).map((p, i) => {
+            const top = i === 0;
+            const here = this._atPlace(p);
+            return `<div class="row${top ? " top" : ""}">
             <img class="ic" src="${IMG("marker-" + p.g)}" alt="">
-            <div class="mid"><div class="nm">${esc(nice(p.name))}</div><div class="sub">${fmtKm(p.distance_km)} · ${TYPES[p.g][this._lang]}</div></div>
-            <div class="act"><a class="m" href="${mapsUrl(p)}" target="_blank" rel="noopener">${t.maps}</a><a class="g" href="${navUrl(p)}" target="_blank" rel="noopener">${t.go}</a></div>
-          </div>`).join("")
+            <div class="mid">${top ? `<div class="tag${here ? " here" : ""}">${here ? t.here : t.nearest}</div>` : ""}<div class="nm">${esc(nice(p.name))}</div><div class="sub">${fmtKm(p.distance_km)} · ${TYPES[p.g][this._lang]}</div></div>
+            <div class="act">${top && here ? `<a class="ci" href="${checkinUrl(this._cfg.checkin_uri, p)}">${ICON_PIN}${t.checkin}</a>` : ""}<a class="m" href="${mapsUrl(p)}" target="_blank" rel="noopener">${t.maps}</a><a class="g" href="${navUrl(p)}" target="${navTarget()}" data-nav="${esc(p.id)}" rel="noopener">${t.go}</a></div>
+          </div>`;
+          }).join("")
         : `<div class="empty">${t.none}</div>`;
 
     const fetched = cur.st.attributes.fetched ? new Date(cur.st.attributes.fetched) : null;
@@ -274,6 +426,14 @@ class JejakMasjidCard extends HTMLElement {
     if (this._map) this._drawMap();
   }
 
+  _popup(p) {
+    const t = T[this._lang];
+    const here = this._atPlace(p);
+    return `<b>${esc(nice(p.name))}</b><br>${fmtKm(p.distance_km)} · ${TYPES[p.g][this._lang]}${here ? `<br><span class="pop-here">${t.here}</span>` : ""}
+      <div class="pop-act">${here ? `<a class="ci" href="${checkinUrl(this._cfg.checkin_uri, p)}">${ICON_PIN}${t.checkin}</a>` : ""}
+      <a class="m" href="${mapsUrl(p)}" target="_blank" rel="noopener">${t.maps}</a><a class="g" href="${navUrl(p)}" target="${navTarget()}" data-nav="${esc(p.id)}" rel="noopener">${t.go}</a></div>`;
+  }
+
   _drawMap() {
     const L = this._L;
     const cur = this._cur;
@@ -283,8 +443,7 @@ class JejakMasjidCard extends HTMLElement {
     for (const p of this._shown || []) {
       const icon = L.icon({ iconUrl: IMG("marker-" + p.g), iconSize: [30, 30], iconAnchor: [15, 29], popupAnchor: [0, -26] });
       L.marker([p.latitude, p.longitude], { icon })
-        .bindPopup(`<b>${esc(nice(p.name))}</b><br>${fmtKm(p.distance_km)} · ${TYPES[p.g][this._lang]}<br>
-          <a href="${mapsUrl(p)}" target="_blank" rel="noopener">${T[this._lang].maps}</a> · <a href="${navUrl(p)}" target="_blank" rel="noopener">${T[this._lang].go}</a>`)
+        .bindPopup(this._popup(p), { minWidth: 220 })
         .addTo(this._layer);
       pts.push([p.latitude, p.longitude]);
     }
@@ -312,6 +471,7 @@ class JejakMasjidCardEditor extends HTMLElement {
       this._form.computeLabel = (s) => ({
         entity: "Extra place to show (blank = just you and Home)", title: "Heading label", filter: "Default filter", show_people: "Show people chips",
         show_map: "Show map", map_height: "Map height (px)", max_items: "Places in list", dark_tiles: "Map style", language: "Language",
+        show_checkin: "Enable Check in (Jejak Masjid app)", checkin_radius_m: "Check-in distance (m)", checkin_uri: "Check-in link",
       }[s.name] || s.name);
       this._form.addEventListener("value-changed", (ev) => {
         this._config = ev.detail.value;
@@ -320,7 +480,8 @@ class JejakMasjidCardEditor extends HTMLElement {
       this.appendChild(this._form);
     }
     this._form.hass = this._hass;
-    this._form.data = { filter: "all", show_people: true, show_map: true, map_height: 260, max_items: 8, dark_tiles: "auto", language: "auto", ...this._config };
+    this._form.data = { filter: "all", show_people: true, show_map: true, map_height: 360, max_items: 8, dark_tiles: "auto", language: "auto",
+      show_checkin: true, checkin_radius_m: 50, checkin_uri: DEFAULT_CHECKIN_URI, ...this._config };
     this._form.schema = [
       { name: "entity", selector: { entity: { integration: "jejakmasjid", domain: "sensor" } } },
       { name: "filter", selector: { select: { mode: "dropdown", options: [
@@ -335,6 +496,11 @@ class JejakMasjidCardEditor extends HTMLElement {
         { name: "language", selector: { select: { mode: "dropdown", options: [
           { value: "auto", label: "Follow HA" }, { value: "en", label: "English" }, { value: "ms", label: "Bahasa Melayu" }] } } },
       ] },
+      { name: "show_checkin", selector: { boolean: {} } },
+      ...(this._form.data.show_checkin === false ? [] : [
+        { name: "checkin_radius_m", selector: { number: { min: 10, max: 300, step: 5, mode: "box" } } },
+        { name: "checkin_uri", selector: { text: {} } },
+      ]),
       { name: "title", selector: { text: {} } },
     ];
   }
@@ -346,7 +512,7 @@ window.customCards = window.customCards || [];
 if (!window.customCards.some((c) => c.type === "jejakmasjid-card")) {
   window.customCards.push({
     type: "jejakmasjid-card", name: "Jejak Masjid", preview: true,
-    description: "Nearby masjid and surau on a map, with a type filter and Google Maps navigation.",
+    description: "Nearby masjid and surau on a map, with a type filter, navigation and check-in to the Jejak Masjid app.",
     documentationURL: "https://github.com/zubir2k/homeassistant-jejakmasjid",
   });
 }
