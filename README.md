@@ -89,7 +89,7 @@ Add the custom card to your dashboard:
 
 ```yaml
 type: custom:jejakmasjid-card
-entity: person.alex
+entity: person.zubir
 ```
 
 ![jejakmasjid-card](https://github.com/user-attachments/assets/661b901c-4e35-41f1-8661-31d0d6a9669d)
@@ -118,7 +118,7 @@ Find masjid and surau around an entity or custom GPS coordinates.
 ```yaml
 action: jejakmasjid.find_nearby
 data:
-  entity_id: person.alex
+  entity_id: person.zubir
   radius: 3
   type: masjid
   limit: 5
