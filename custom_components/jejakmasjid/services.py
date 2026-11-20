@@ -9,7 +9,7 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import JejakMasjidError, async_fetch_nearby, rank
+from jejakmasjid import JejakMasjidError, async_fetch_nearby, rank
 from .const import DEFAULT_RADIUS, DOMAIN, MAX_RADIUS, MIN_RADIUS, PLACE_TYPES
 
 SERVICE_FIND_NEARBY = "find_nearby"

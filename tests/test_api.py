@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import copy
 
-from custom_components.jejakmasjid.api import parse_places
+from jejakmasjid import parse_places
 
 from .conftest import MOCK_GEOJSON
 
