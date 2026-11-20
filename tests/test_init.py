@@ -11,8 +11,8 @@ from custom_components.jejakmasjid.const import CONF_RADIUS, DOMAIN
 
 async def test_setup_and_unload(hass: HomeAssistant, mock_fetch_nearby) -> None:
     """Test setting up and unloading the integration."""
-    hass.states.async_set("zone.home", "0", {"latitude": 3.02192, "longitude": 101.79148})
-    hass.states.async_set("person.test", "home", {"latitude": 3.02190, "longitude": 101.79150})
+    hass.states.async_set("zone.home", "0", {"latitude": 3.14440, "longitude": 101.69170})
+    hass.states.async_set("person.test", "home", {"latitude": 3.14440, "longitude": 101.69170})
 
     entry = MockConfigEntry(
         domain=DOMAIN,

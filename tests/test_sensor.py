@@ -12,9 +12,9 @@ from custom_components.jejakmasjid.const import CONF_RADIUS, DOMAIN
 
 async def test_sensors_created_and_updated(hass: HomeAssistant, mock_fetch_nearby) -> None:
     """Test that sensors are properly populated for tracked persons and Home."""
-    hass.states.async_set("zone.home", "0", {"latitude": 3.02192, "longitude": 101.79148})
+    hass.states.async_set("zone.home", "0", {"latitude": 3.14440, "longitude": 101.69170})
     hass.states.async_set(
-        "person.test", "home", {"latitude": 3.02190, "longitude": 101.79150, "friendly_name": "Test User"}
+        "person.test", "home", {"latitude": 3.14440, "longitude": 101.69170, "friendly_name": "Test User"}
     )
 
     entry = MockConfigEntry(
@@ -35,7 +35,7 @@ async def test_sensors_created_and_updated(hass: HomeAssistant, mock_fetch_nearb
     assert entity_id is not None
     state = hass.states.get(entity_id)
     assert state is not None
-    assert state.state == "Surau Ar-Raudhah"
+    assert state.state == "Surau Al-Falah"
     assert "nearby" in state.attributes
 
     dist_id = ent_reg.async_get_entity_id("sensor", DOMAIN, "jejakmasjid_home_nearest_distance")
@@ -53,7 +53,7 @@ async def test_sensors_created_and_updated(hass: HomeAssistant, mock_fetch_nearb
 
 async def test_person_added_after_setup_is_tracked(hass: HomeAssistant, mock_fetch_nearby) -> None:
     """A person created after setup still triggers a refresh when they move."""
-    hass.states.async_set("zone.home", "0", {"latitude": 3.02192, "longitude": 101.79148})
+    hass.states.async_set("zone.home", "0", {"latitude": 3.14440, "longitude": 101.69170})
     entry = MockConfigEntry(domain=DOMAIN, title="Jejak Masjid", unique_id=DOMAIN, data={})
     entry.add_to_hass(hass)
 

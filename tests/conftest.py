@@ -13,11 +13,11 @@ MOCK_GEOJSON: dict[str, Any] = {
             "type": "Feature",
             "geometry": {
                 "type": "Point",
-                "coordinates": [101.790497, 3.020018],
+                "coordinates": [101.69170, 3.14440],
             },
             "properties": {
                 "id": "place-1",
-                "name": "Surau Ar-Raudhah",
+                "name": "Surau Al-Falah",
                 "has_kursus_asas_haji": False,
             },
         },
@@ -25,11 +25,11 @@ MOCK_GEOJSON: dict[str, Any] = {
             "type": "Feature",
             "geometry": {
                 "type": "Point",
-                "coordinates": [101.785287, 3.024986],
+                "coordinates": [101.69350, 3.14780],
             },
             "properties": {
                 "id": "place-2",
-                "name": "Masjid Saujana Impian",
+                "name": "Masjid Negara",
                 "has_kursus_asas_haji": True,
             },
         },
@@ -51,18 +51,18 @@ def mock_fetch_nearby():
         return_value=[
             {
                 "id": "place-1",
-                "name": "Surau Ar-Raudhah",
+                "name": "Surau Al-Falah",
                 "type": "surau",
-                "latitude": 3.020018,
-                "longitude": 101.790497,
+                "latitude": 3.14440,
+                "longitude": 101.69170,
                 "kursus_haji": False,
             },
             {
                 "id": "place-2",
-                "name": "Masjid Saujana Impian",
+                "name": "Masjid Negara",
                 "type": "masjid",
-                "latitude": 3.024986,
-                "longitude": 101.785287,
+                "latitude": 3.14780,
+                "longitude": 101.69350,
                 "kursus_haji": True,
             },
         ],

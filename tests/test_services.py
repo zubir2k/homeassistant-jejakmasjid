@@ -18,10 +18,10 @@ async def test_find_nearby_service(hass: HomeAssistant) -> None:
         return_value=[
             {
                 "id": "place-1",
-                "name": "Surau Ar-Raudhah",
+                "name": "Surau Al-Falah",
                 "type": "surau",
-                "latitude": 3.020018,
-                "longitude": 101.790497,
+                "latitude": 3.14440,
+                "longitude": 101.69170,
                 "kursus_haji": False,
             }
         ],
@@ -29,11 +29,11 @@ async def test_find_nearby_service(hass: HomeAssistant) -> None:
         result = await hass.services.async_call(
             DOMAIN,
             "find_nearby",
-            {"latitude": 3.02192, "longitude": 101.79148, "radius": 3, "limit": 5},
+            {"latitude": 3.14440, "longitude": 101.69170, "radius": 3, "limit": 5},
             blocking=True,
             return_response=True,
         )
 
     assert result["count"] == 1
     assert len(result["places"]) == 1
-    assert result["places"][0]["name"] == "Surau Ar-Raudhah"
+    assert result["places"][0]["name"] == "Surau Al-Falah"
