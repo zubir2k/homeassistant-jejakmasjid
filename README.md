@@ -27,7 +27,7 @@ Jejak Masjid is a free app for finding mosques and surau near you, at home or on
 - **Actionable Service (`find_nearby`)**: Query places around any person, zone, or custom GPS coordinates with configurable limits and type filters for automations and voice assistants.
 - **Privacy-Conscious Caching**: GPS coordinates are rounded to ~110m (3 decimal places) before querying the public API; searches are cached locally (`.storage`) and shared across family members to minimize upstream requests.
 - **Zero Database Bloat**: Employs `_unrecorded_attributes` to prevent the large list of nearby places from bloating the Home Assistant Recorder database.
-- **Standardized Client Library**: Powered by the standalone [`python-jejakmasjid`](https://pypi.org/project/python-jejakmasjid/) package on PyPI conforming strictly to Home Assistant ADR-0020.
+- **Standardized Client Library**: Powered by the standalone [`python-jejakmasjid`](https://pypi.org/project/python-jejakmasjid/).
 
 ---
 
