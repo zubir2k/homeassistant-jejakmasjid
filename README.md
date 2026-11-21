@@ -20,7 +20,7 @@ Jejak Masjid is a free app for finding mosques and surau near you, at home or on
 ## Integration Features
 
 - **Dynamic Person & Home Tracking**: Automatically monitors GPS coordinates from every active `person` entity as well as `zone.home`.
-- **Bundled Lovelace Map Card**: Includes a built-in, zero-setup Leaflet map card (`custom:jejakmasjid-card`) with live pins, type filters (Masjid, Surau, Madrasah), distance badges, one-tap navigation, and Jejak Masjid app check-in.
+- **Bundled Lovelace Map Card**: Includes a built-in, zero-setup Leaflet map card (`custom:jejakmasjid-card`) with live pins, type filters (All, Masjid, Surau, Others), distance badges, one-tap navigation, and Jejak Masjid app check-in.
 - **Comprehensive Sensor Suite**: Exposes dedicated sensors for nearest place name, distance in kilometers, dedicated masjid and surau entities, and aggregate counts within radius.
 - **Actionable Service (`find_nearby`)**: Query places around any person, zone, or custom GPS coordinates with configurable limits and type filters for automations and voice assistants.
 - **Privacy-Conscious Caching**: GPS coordinates are rounded to ~110m (3 decimal places) before querying the public API; searches are cached locally (`.storage`) and shared across family members to minimize upstream requests.
@@ -63,13 +63,18 @@ Configure your desired search radius (1 to 5 km; defaults to 3 km) and scan inte
 
 ## Entities (Per Tracked Person & Home)
 
+All entities sit under the **Jejak Masjid** service device, so their IDs start with `sensor.jejak_masjid_<who>_`, where `<who>` is the person's name (or `home`). For example, `person.zubir` gets `sensor.jejak_masjid_zubir_nearest_masjid_or_surau`.
+
 | Entity | Type | Unit / State | Notes |
 | :--- | :--- | :--- | :--- |
-| `sensor.<who>_nearest` | Sensor | Text | Nearest masjid or surau name. Attributes: `place_id`, `type`, `distance_km`, `latitude`, `longitude`, `kursus_haji`, `radius_km`, `nearby`. |
-| `sensor.<who>_nearest_distance` | Sensor | `km` | Distance to nearest place (`distance` device class, `measurement` state class). |
-| `sensor.<who>_nearest_masjid` | Sensor | Text | Nearest place filtered strictly to masjids. Attributes: `place_id`, `type`, `distance_km`, `latitude`, `longitude`, `kursus_haji`. |
-| `sensor.<who>_nearest_surau` | Sensor | Text | Nearest place filtered strictly to suraus. Attributes: `place_id`, `type`, `distance_km`, `latitude`, `longitude`, `kursus_haji`. |
-| `sensor.<who>_count` | Sensor | `places` | Total places within radius (`measurement` state class). Attributes: `masjid`, `surau`, `madrasah`, `other`, `radius_km`. |
+| `sensor.jejak_masjid_<who>_nearest_masjid_or_surau` | Sensor | Text | Nearest masjid or surau name. Attributes: `place_id`, `type`, `distance_km`, `latitude`, `longitude`, `kursus_haji`, `radius_km`, `nearby`. |
+| `sensor.jejak_masjid_<who>_nearest_distance` | Sensor | `km` | Distance to nearest place (`distance` device class, `measurement` state class). |
+| `sensor.jejak_masjid_<who>_nearest_masjid` | Sensor | Text | Nearest place filtered strictly to masjids. Attributes: `place_id`, `type`, `distance_km`, `latitude`, `longitude`, `kursus_haji`. |
+| `sensor.jejak_masjid_<who>_nearest_surau` | Sensor | Text | Nearest place filtered strictly to suraus. Attributes: `place_id`, `type`, `distance_km`, `latitude`, `longitude`, `kursus_haji`. |
+| `sensor.jejak_masjid_<who>_places_nearby` | Sensor | `places` | Total places within radius (`measurement` state class). Attributes: `masjid`, `surau`, `madrasah`, `other`, `radius_km`. |
+
+> [!NOTE]
+> If you renamed an entity or a person, check the actual ID under **Settings → Devices & Services → Jejak Masjid**.
 
 ## Lovelace Map Card
 
@@ -89,12 +94,16 @@ person: person.zubir
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `person` | `string` | *(Current viewer)* | The `person` entity to follow (e.g. `person.zubir`). Leave blank to follow whoever is viewing the dashboard. |
-| `filter` | `string` | `all` | Initial filter: `all`, `masjid`, `surau`, `other`. |
+| `title` | `string` | `Jejak Masjid` | Heading label shown on the card. |
+| `filter` | `string` | `all` | Initial filter: `all`, `masjid`, `surau`, `other` (madrasah and anything else). |
+| `show_people` | `boolean` | `true` | Show chips to switch between tracked people and Home. |
 | `show_map` | `boolean` | `true` | Show/hide the interactive map canvas. |
 | `map_height` | `number` | `360` | Height of the map in pixels. |
 | `max_items` | `number` | `8` | Number of nearby places shown in the list. |
+| `dark_tiles` | `string` | `auto` | Map style: `auto` (follows theme), `true` (always dark), `false` (always light). |
 | `show_checkin` | `boolean` | `true` | Show direct "Check in" action to open the Jejak Masjid mobile app. |
 | `checkin_radius_m` | `number` | `50` | Proximity radius (meters) before check-in button becomes active. |
+| `checkin_uri` | `string` | `jejakmasjidmobile://checkin` | Link the Check in button opens. Falls back to the app store if the app isn't installed. |
 | `language` | `string` | `auto` | UI language: `auto` (follows HA), `en` (English), or `ms` (Bahasa Melayu). |
 
 ## Actions (Services)
@@ -122,6 +131,15 @@ data:
   radius: 5
   limit: 10
 ```
+
+> [!NOTE]
+> Check in has been tested on Android. iOS behaviour (opening the app, or falling back to the App Store) is not yet verified.
+
+## Removal
+
+1. Go to **Settings → Devices & Services → Jejak Masjid**, open the three-dot menu and select **Delete**. This also removes the card's dashboard resource and the local search cache.
+2. Remove any `custom:jejakmasjid-card` cards from your dashboards.
+3. If installed with HACS, remove the repository in HACS; if installed manually, delete `config/custom_components/jejakmasjid`. Restart Home Assistant.
 
 ## Credits & Attribution
 
