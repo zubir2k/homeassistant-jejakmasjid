@@ -89,7 +89,7 @@ Add the custom card to your dashboard:
 
 ```yaml
 type: custom:jejakmasjid-card
-entity: person.zubir
+person: person.zubir
 ```
 
 ![jejakmasjid-card](https://github.com/user-attachments/assets/661b901c-4e35-41f1-8661-31d0d6a9669d)
@@ -98,7 +98,7 @@ entity: person.zubir
 
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `entity` | `string` | *(First available sensor)* | Any `person` entity or `zone.home`. |
+| `person` | `string` | *(Current viewer)* | The `person` entity to follow (e.g. `person.zubir`). Leave blank to follow whoever is viewing the dashboard. |
 | `filter` | `string` | `all` | Initial filter: `all`, `masjid`, `surau`, `other`. |
 | `show_map` | `boolean` | `true` | Show/hide the interactive map canvas. |
 | `map_height` | `number` | `360` | Height of the map in pixels. |
