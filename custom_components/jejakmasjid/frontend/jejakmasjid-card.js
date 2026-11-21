@@ -109,7 +109,7 @@ class JejakMasjidCard extends HTMLElement {
       ...config,
     };
     this._filter = FILTERS.includes(this._cfg.filter) ? this._cfg.filter : "all";
-    this._source = this._cfg.entity || null;
+    this._source = null;
     this._built = false;
     this._stamp = null;
     if (this._hass) this._render();
@@ -165,10 +165,18 @@ class JejakMasjidCard extends HTMLElement {
     return out.sort((a, b) => (a.src === "zone.home") - (b.src === "zone.home") || a.who.localeCompare(b.who));
   }
 
-  // Start on the configured sensor, else whoever is looking at the dashboard, else Home.
+  // The sensor picked in the config: by person (v0.3.5+), or a legacy sensor entity.
+  _wanted(sources) {
+    const e = this._cfg.entity || "";
+    const p = this._cfg.person || (e.startsWith("person.") ? e : null);
+    return (p && sources.find((s) => s.src === p)?.id) || (e.startsWith("sensor.") ? e : null);
+  }
+
+  // Start on the configured person, else whoever is looking at the dashboard, else Home.
   _defaultSource(sources) {
+    const want = this._wanted(sources);
     return (
-      sources.find((s) => s.id === this._cfg.entity) ||
+      sources.find((s) => s.id === want) ||
       sources.find((s) => s.user && s.user === this._hass.user?.id) ||
       sources.find((s) => s.src === "zone.home") ||
       sources[0]
@@ -380,7 +388,8 @@ class JejakMasjidCard extends HTMLElement {
     }
     // Chips: only the viewer's own person, Home, and the sensor picked in the config,
     // so a house with many HA users doesn't get a long row of names.
-    const mine = (s) => s.src === "zone.home" || s.id === this._cfg.entity || (s.user && s.user === this._hass.user?.id);
+    const want = this._wanted(sources);
+    const mine = (s) => s.src === "zone.home" || s.id === want || (s.user && s.user === this._hass.user?.id);
     const all = sources;
     sources = all.filter(mine);
     if (!sources.length) sources = all.slice(0, 1);
@@ -469,21 +478,32 @@ class JejakMasjidCardEditor extends HTMLElement {
     if (!this._form) {
       this._form = document.createElement("ha-form");
       this._form.computeLabel = (s) => ({
-        entity: "Extra place to show (blank = just you and Home)", title: "Heading label", filter: "Default filter", show_people: "Show people chips",
+        person: "Person (blank = whoever is viewing)", title: "Heading label", filter: "Default filter", show_people: "Show people chips",
         show_map: "Show map", map_height: "Map height (px)", max_items: "Places in list", dark_tiles: "Map style", language: "Language",
         show_checkin: "Enable Check in (Jejak Masjid app)", checkin_radius_m: "Check-in distance (m)", checkin_uri: "Check-in link",
       }[s.name] || s.name);
       this._form.addEventListener("value-changed", (ev) => {
-        this._config = ev.detail.value;
+        const v = { ...ev.detail.value };
+        delete v.entity; // replaced by person
+        if (!v.person) delete v.person;
+        this._config = v;
         this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this._config }, bubbles: true, composed: true }));
       });
       this.appendChild(this._form);
     }
     this._form.hass = this._hass;
+    // People who have a Jejak Masjid "nearest" sensor (the integration skips anyone without GPS).
+    const tracked = Object.values(this._hass.states)
+      .filter((st) => st.entity_id.startsWith("sensor.") && Array.isArray(st.attributes.nearby) && String(st.attributes.source || "").startsWith("person."))
+      .map((st) => st.attributes.source);
+    // Older configs named a sensor; show it as its person.
+    const e = this._config.entity || "";
+    const legacy = e.startsWith("person.") ? e : this._hass.states[e]?.attributes.source;
+    const person = this._config.person || (String(legacy || "").startsWith("person.") ? legacy : undefined);
     this._form.data = { filter: "all", show_people: true, show_map: true, map_height: 360, max_items: 8, dark_tiles: "auto", language: "auto",
-      show_checkin: true, checkin_radius_m: 50, checkin_uri: DEFAULT_CHECKIN_URI, ...this._config };
+      show_checkin: true, checkin_radius_m: 50, checkin_uri: DEFAULT_CHECKIN_URI, ...this._config, person };
     this._form.schema = [
-      { name: "entity", selector: { entity: { integration: "jejakmasjid", domain: "sensor" } } },
+      { name: "person", selector: { entity: tracked.length ? { domain: "person", include_entities: [...new Set(tracked)] } : { domain: "person" } } },
       { name: "filter", selector: { select: { mode: "dropdown", options: [
         { value: "all", label: "All" }, { value: "masjid", label: "Masjid" }, { value: "surau", label: "Surau" }, { value: "other", label: "Others" }] } } },
       { type: "grid", name: "", schema: [
