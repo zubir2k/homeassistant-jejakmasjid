@@ -100,7 +100,15 @@ const ICON_LOCATE = '<svg viewBox="0 0 24 24" width="18" height="18"><path fill=
 const ICON_PIN = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
 // Many names are ALL CAPS; show them in title case
 const nice = (n) => (n && n === n.toUpperCase() ? n.toLowerCase().replace(/(^|[\s\-(\/'])([a-z])/g, (m, a, b) => a + b.toUpperCase()) : n);
-const fmtKm = (km) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`);
+const fmtDist = (p) => {
+  let s = "";
+  if (p.distance_m != null) {
+    s = p.distance_m < 1000 ? `${p.distance_m} m` : `${(p.distance_m / 1000).toFixed(1)} km`;
+  } else if (p.distance_km != null) {
+    s = p.distance_km < 1 ? `${Math.round(p.distance_km * 1000)} m` : `${p.distance_km.toFixed(1)} km`;
+  }
+  return p.direction ? `${s} (${p.direction})` : s;
+};
 
 class JejakMasjidCard extends HTMLElement {
   setConfig(config) {
@@ -232,6 +240,7 @@ class JejakMasjidCard extends HTMLElement {
         .pop-act a { box-sizing: border-box; flex: 1; text-align: center; font-weight: 600; text-decoration: none; border-radius: 8px; padding: 7px 8px; font-size: 12.5px; }
         .pop-act .m { color: #333; border: 1px solid #ccc; }
         .pop-act .g { color: #fff; background: var(--jm-teal); }
+        .pop-act .jm { color: #fff; background: var(--jm-dark); }
         .pop-act .ci { flex: 0 0 100%; box-sizing: border-box; justify-content: center; }
         .pop-act { flex-wrap: wrap; }
         .pop-act a, .act a { white-space: nowrap; }
@@ -469,7 +478,7 @@ class JejakMasjidCard extends HTMLElement {
             const here = this._atPlace(p);
             return `<div class="row${top ? " top" : ""}">
             <img class="ic" src="${IMG("marker-" + p.g)}" alt="">
-            <div class="mid">${top ? `<div class="tag${here ? " here" : ""}">${here ? t.here : t.nearest}</div>` : ""}<div class="nm">${esc(nice(p.name))}</div><div class="sub">${fmtKm(p.distance_km)} · ${TYPES[p.g][this._lang]}</div></div>
+            <div class="mid">${top ? `<div class="tag${here ? " here" : ""}">${here ? t.here : t.nearest}</div>` : ""}<div class="nm">${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${esc(nice(p.name))}</a>` : esc(nice(p.name))}</div><div class="sub">${fmtDist(p)} · ${TYPES[p.g][this._lang]}</div></div>
             <div class="act">${top && here ? `<a class="ci" href="${checkinUrl(this._cfg.checkin_uri, p)}">${ICON_PIN}${t.checkin}</a>` : ""}<a class="m" href="${mapsUrl(p)}" target="_blank" rel="noopener">${t.maps}</a><a class="g" href="${navUrl(p)}" target="${navTarget()}" data-nav="${esc(p.id)}" rel="noopener">${t.go}</a></div>
           </div>`;
           }).join("")
@@ -487,8 +496,9 @@ class JejakMasjidCard extends HTMLElement {
   _popup(p) {
     const t = T[this._lang];
     const here = this._atPlace(p);
-    return `<b>${esc(nice(p.name))}</b><br>${fmtKm(p.distance_km)} · ${TYPES[p.g][this._lang]}${here ? `<br><span class="pop-here">${t.here}</span>` : ""}
+    return `<b>${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${esc(nice(p.name))}</a>` : esc(nice(p.name))}</b><br>${fmtDist(p)} · ${TYPES[p.g][this._lang]}${here ? `<br><span class="pop-here">${t.here}</span>` : ""}
       <div class="pop-act">${here ? `<a class="ci" href="${checkinUrl(this._cfg.checkin_uri, p)}">${ICON_PIN}${t.checkin}</a>` : ""}
+      ${p.url ? `<a class="jm" href="${esc(p.url)}" target="_blank" rel="noopener">Jejak Masjid</a>` : ""}
       <a class="m" href="${mapsUrl(p)}" target="_blank" rel="noopener">${t.maps}</a><a class="g" href="${navUrl(p)}" target="${navTarget()}" data-nav="${esc(p.id)}" rel="noopener">${t.go}</a></div>`;
   }
 
