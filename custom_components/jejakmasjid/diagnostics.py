@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 
 from .coordinator import JejakMasjidConfigEntry
 
-TO_REDACT = {"latitude", "longitude", "nearby", "nearest", "nearest_masjid", "nearest_surau", "name"}
+TO_REDACT = {"latitude", "longitude", "nearby", "nearest", "nearest_masjid", "nearest_surau", "name", "account_token", "account_email"}
 
 
 async def async_get_config_entry_diagnostics(
@@ -17,6 +17,7 @@ async def async_get_config_entry_diagnostics(
     coordinator = entry.runtime_data
     return {
         "options": dict(entry.options),
+        "account_linked": "account_token" in entry.data,
         "last_update_success": coordinator.last_update_success,
         "update_interval": str(coordinator.update_interval),
         "api_calls_since_start": coordinator.api_calls,

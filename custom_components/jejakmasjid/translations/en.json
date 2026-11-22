@@ -23,8 +23,8 @@
   },
   "options": {
     "step": {
-      "init": {
-        "title": "Jejak Masjid options",
+      "settings": {
+        "title": "Jejak Masjid settings",
         "data": {
           "radius": "Search radius",
           "scan_interval": "Update interval"
@@ -33,7 +33,49 @@
           "radius": "How far around each person and Home to look, in km (1 to 5; Jejak Masjid caps searches at 5 km).",
           "scan_interval": "How often, in minutes, to check where everyone is. Jejak Masjid is only asked again when someone leaves the area of an earlier search (up to 5 km wide, shared by everyone) or it is a day old."
         }
+      },
+      "init": {
+        "title": "Jejak Masjid",
+        "menu_options": {
+          "settings": "Search radius and update interval",
+          "link": "Link a Jejak Masjid account (optional, for your stats)",
+          "unlink": "Unlink Jejak Masjid account",
+          "person": "Change which person the account belongs to"
+        }
+      },
+      "link": {
+        "title": "Link Jejak Masjid account",
+        "description": "Optional. Adds sensors with your own Jejak Masjid stats. Jejak Masjid will email you a sign-in code. Use the email of your Jejak Masjid account.",
+        "data": {
+          "account_email": "Email",
+          "account_person": "Person"
+        },
+        "data_description": {
+          "account_person": "Who this Jejak Masjid account belongs to. The stats sensors are named after them. One account per Home Assistant."
+        }
+      },
+      "otp": {
+        "title": "Enter the code",
+        "description": "Enter the code Jejak Masjid sent to {email}.",
+        "data": {
+          "otp": "Code"
+        }
+      },
+      "unlink": {
+        "title": "Unlink account",
+        "description": "Home Assistant forgets the sign-in and removes the stats sensors. Your Jejak Masjid account is not changed."
+      },
+      "person": {
+        "title": "Account owner",
+        "description": "Pick the person this Jejak Masjid account belongs to.",
+        "data": {
+          "account_person": "Person"
+        }
       }
+    },
+    "error": {
+      "otp_send_failed": "Jejak Masjid could not send a code to that email.",
+      "invalid_otp": "That code did not work. Check it and try again."
     }
   },
   "entity": {
@@ -52,6 +94,24 @@
       },
       "count": {
         "name": "{who} places nearby"
+      },
+      "account_checkins": {
+        "name": "{person} check-ins"
+      },
+      "account_masjids": {
+        "name": "{person} masjids visited"
+      },
+      "account_streak": {
+        "name": "{person} streak"
+      },
+      "account_points": {
+        "name": "{person} points"
+      },
+      "account_rank": {
+        "name": "{person} global rank"
+      },
+      "account_achievements": {
+        "name": "{person} achievements"
       }
     }
   },
@@ -103,6 +163,12 @@
     },
     "cannot_connect": {
       "message": "Could not reach Jejak Masjid."
+    }
+  },
+  "issues": {
+    "account_relink": {
+      "title": "Jejak Masjid account sign-in expired",
+      "description": "Your stats sensors stopped updating. Open the Jejak Masjid options, unlink, then link your account again."
     }
   }
 }

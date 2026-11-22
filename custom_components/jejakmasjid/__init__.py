@@ -10,6 +10,7 @@ from homeassistant.helpers.event import TrackStates, async_track_state_change_fi
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
+from .account import CONF_TOKEN, AccountCoordinator
 from .card_registration import async_register_card, async_unregister_card
 from .const import CACHE_STORAGE_VERSION, DOMAIN
 from .coordinator import JejakMasjidConfigEntry, JejakMasjidCoordinator
@@ -35,6 +36,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: JejakMasjidConfigEntry) 
     await coordinator.async_load_cache()
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
+    coordinator.account = None
+    if CONF_TOKEN in entry.data:
+        coordinator.account = AccountCoordinator(hass, entry)
+        await coordinator.account.async_refresh()
 
     @callback
     def _person_moved(event: Event[EventStateChangedData]) -> None:

@@ -6,6 +6,8 @@
  */
 const BASE = new URL(".", import.meta.url).pathname.replace(/\/$/, "");
 const VERSION = new URL(import.meta.url).searchParams.get("v") || "dev";
+// The stats card ships alongside; one resource loads both.
+import(`${BASE}/jejakmasjid-stats-card.js?v=${VERSION}`).catch(() => {});
 const CARD_TYPE = "custom:jejakmasjid-card";
 
 const TYPES = {

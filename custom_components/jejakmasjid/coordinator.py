@@ -68,6 +68,8 @@ class JejakMasjidCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
     Distances are always recomputed from the live position.
     """
 
+    account: Any = None
+
     config_entry: JejakMasjidConfigEntry
 
     def __init__(self, hass: HomeAssistant, entry: JejakMasjidConfigEntry) -> None:
