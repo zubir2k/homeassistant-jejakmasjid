@@ -30,19 +30,27 @@ UID_PREFIX = "jejakmasjid_"
 def _place_attrs(place: dict[str, Any] | None) -> dict[str, Any]:
     if not place:
         return {}
-    return {
+    attrs: dict[str, Any] = {
         "place_id": place["id"],
         "type": place["type"],
         "distance_km": place["distance_km"],
         "latitude": place["latitude"],
         "longitude": place["longitude"],
-        "kursus_haji": place["kursus_haji"],
+        "kursus_haji": place.get("kursus_haji", False),
     }
+    if place.get("distance_m") is not None:
+        attrs["distance_m"] = place["distance_m"]
+    if place.get("direction"):
+        attrs["direction"] = place["direction"]
+    if place.get("url"):
+        attrs["url"] = place["url"]
+    return attrs
 
 
 def _nearby(loc: dict[str, Any]) -> list[dict[str, Any]]:
+    keys = ("id", "name", "type", "distance_km", "distance_m", "direction", "url", "latitude", "longitude")
     return [
-        {k: p[k] for k in ("id", "name", "type", "distance_km", "latitude", "longitude")}
+        {k: p[k] for k in keys if k in p and p[k] is not None}
         for p in loc["nearby"]
     ]
 
