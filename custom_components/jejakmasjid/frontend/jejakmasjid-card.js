@@ -139,6 +139,19 @@ class JejakMasjidCard extends HTMLElement {
     this._render();
   }
 
+  connectedCallback() {
+    const el = this.shadowRoot?.getElementById("map");
+    if (this._ro && el) this._ro.observe(el);
+    if (this._map) {
+      setTimeout(() => {
+        if (!this._map) return;
+        this._map._sizeChanged = true;
+        this._map.invalidateSize({ pan: false });
+        if (!this._userInteracted) this._fitOrCenter();
+      }, 100);
+    }
+  }
+
   get _lang() {
     const l = this._cfg.language;
     if (l === "en" || l === "ms") return l;
@@ -279,11 +292,11 @@ class JejakMasjidCard extends HTMLElement {
     const $ = (id) => this.shadowRoot.getElementById(id);
     $("seg").addEventListener("click", (e) => {
       const b = e.target.closest("button");
-      if (b) { this._filter = b.dataset.f; this._fitted = false; this._stamp = null; this._render(); }
+      if (b) { this._filter = b.dataset.f; this._userInteracted = false; this._stamp = null; this._render(); }
     });
     $("chips").addEventListener("click", (e) => {
       const b = e.target.closest("button");
-      if (b) { this._source = b.dataset.s; this._fitted = false; this._stamp = null; this._render(); }
+      if (b) { this._source = b.dataset.s; this._userInteracted = false; this._stamp = null; this._render(); }
     });
     $("rf").addEventListener("click", () => this._refresh());
     this.shadowRoot.addEventListener("click", (e) => {
@@ -295,7 +308,7 @@ class JejakMasjidCard extends HTMLElement {
       if (a) { e.preventDefault(); this._sheet(a.dataset.nav); }
     });
     this._built = true;
-    this._fitted = false;
+    this._userInteracted = false;
     if (c.show_map) this._ready = loadLeaflet().then((L) => this._initMap(L)).catch(() => { $("map").classList.add("hidden"); });
   }
 
@@ -307,7 +320,7 @@ class JejakMasjidCard extends HTMLElement {
     try {
       await this._hass.callService("homeassistant", "update_entity", { entity_id: this._cur.id });
     } finally {
-      this._fitted = false; this._stamp = null;
+      this._userInteracted = false; this._stamp = null;
       setTimeout(() => { b.classList.remove("spin"); this._render(); }, 800);
     }
   }
@@ -333,6 +346,7 @@ class JejakMasjidCard extends HTMLElement {
     const el = this.shadowRoot.getElementById("map");
     if (!el || this._map) return;
     this._L = L;
+    this._userInteracted = false;
     this._map = L.map(el, { zoomControl: true, attributionControl: true, scrollWheelZoom: false });
     this._map.setView([this._hass.config.latitude || 3.139, this._hass.config.longitude || 101.6869], 14);
     this._tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -342,6 +356,10 @@ class JejakMasjidCard extends HTMLElement {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | Jejak Masjid',
     }).addTo(this._map);
     this._layer = L.layerGroup().addTo(this._map);
+
+    this._map.on("dragstart", () => { this._userInteracted = true; });
+    this._map.on("zoomstart", (e) => { if (e && e.originalEvent) this._userInteracted = true; });
+
     // "My location" button under the zoom buttons: re-centres on the selected person (or Home).
     const Locate = L.Control.extend({
       options: { position: "topleft" },
@@ -354,20 +372,49 @@ class JejakMasjidCard extends HTMLElement {
         L.DomEvent.disableClickPropagation(bar);
         L.DomEvent.on(a, "click", (e) => {
           L.DomEvent.preventDefault(e);
+          this._userInteracted = false;
           const o = this._cur?.origin;
-          if (o) this._map.setView(o, Math.max(this._map.getZoom(), 16));
+          if (o) {
+            this._map.setView(o, Math.max(this._map.getZoom(), 16));
+          } else {
+            this._fitOrCenter(true);
+          }
         });
         return bar;
       },
     });
     new Locate().addTo(this._map);
-    new ResizeObserver(() => {
+
+    this._lastW = 0;
+    this._lastH = 0;
+    this._ro = new ResizeObserver(() => {
       if (!this._map || !el.clientWidth || !el.clientHeight) return;
-      // Leaflet caches the size it was created at (often 0 in the editor preview).
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      if (Math.abs(w - this._lastW) > 2 || Math.abs(h - this._lastH) > 2) {
+        this._lastW = w;
+        this._lastH = h;
+        this._map._sizeChanged = true;
+        this._map.invalidateSize({ pan: false });
+        if (!this._userInteracted) this._fitOrCenter();
+      }
+    });
+    this._ro.observe(el);
+
+    // Invalidate and fit once card styles and layout settle
+    setTimeout(() => {
+      if (!this._map) return;
       this._map._sizeChanged = true;
-      this._map.invalidateSize();
-      if (!this._fitted) this._drawMap();
-    }).observe(el);
+      this._map.invalidateSize({ pan: false });
+      if (!this._userInteracted) this._fitOrCenter();
+    }, 150);
+    setTimeout(() => {
+      if (!this._map) return;
+      this._map._sizeChanged = true;
+      this._map.invalidateSize({ pan: false });
+      if (!this._userInteracted) this._fitOrCenter();
+    }, 450);
+
     this._drawMap();
   }
 
@@ -396,7 +443,7 @@ class JejakMasjidCard extends HTMLElement {
     sources = all.filter(mine);
     if (!sources.length) sources = all.slice(0, 1);
     let cur = sources.find((s) => s.id === this._source);
-    if (!cur) { cur = this._defaultSource(sources); this._source = cur.id; this._fitted = false; }
+    if (!cur) { cur = this._defaultSource(sources); this._source = cur.id; this._userInteracted = false; }
 
     const places = cur.st.attributes.nearby.map((p) => ({ ...p, g: group(p.type) }));
     const counts = { all: places.length, masjid: 0, surau: 0, other: 0 };
@@ -445,30 +492,39 @@ class JejakMasjidCard extends HTMLElement {
       <a class="m" href="${mapsUrl(p)}" target="_blank" rel="noopener">${t.maps}</a><a class="g" href="${navUrl(p)}" target="${navTarget()}" data-nav="${esc(p.id)}" rel="noopener">${t.go}</a></div>`;
   }
 
+  _fitOrCenter(force = false) {
+    if (!this._map || !this._cur) return;
+    if (this._userInteracted && !force) return;
+    const pts = [];
+    for (const p of this._shown || []) pts.push([p.latitude, p.longitude]);
+    if (this._cur.origin) pts.push(this._cur.origin);
+    const box = this._map.getContainer();
+    if (!box || box.clientWidth <= 0 || box.clientHeight <= 0) return;
+    this._map._sizeChanged = true;
+    if (pts.length === 1) {
+      this._map.setView(pts[0], 15);
+    } else if (pts.length > 1) {
+      this._map.fitBounds(pts, { padding: [28, 28], maxZoom: 16 });
+    } else if (this._cur.origin) {
+      this._map.setView(this._cur.origin, 15);
+    }
+  }
+
   _drawMap() {
     const L = this._L;
     const cur = this._cur;
     if (!L || !this._map || !cur) return;
     this._layer.clearLayers();
-    const pts = [];
     for (const p of this._shown || []) {
       const icon = L.icon({ iconUrl: IMG("marker-" + p.g), iconSize: [30, 30], iconAnchor: [15, 29], popupAnchor: [0, -26] });
       L.marker([p.latitude, p.longitude], { icon })
         .bindPopup(this._popup(p), { minWidth: 220 })
         .addTo(this._layer);
-      pts.push([p.latitude, p.longitude]);
     }
     if (cur.origin) {
       L.marker(cur.origin, { icon: L.divIcon({ className: "me-wrap", html: '<div class="me"></div>', iconSize: [16, 16] }), zIndexOffset: 1000, interactive: false }).addTo(this._layer);
-      pts.push(cur.origin);
     }
-    const box = this._map.getContainer();
-    if (!this._fitted && pts.length && box.clientWidth > 0 && box.clientHeight > 0) {
-      this._map._sizeChanged = true;
-      if (pts.length === 1) this._map.setView(pts[0], 15);
-      else this._map.fitBounds(pts, { padding: [28, 28], maxZoom: 16 });
-      this._fitted = true;
-    }
+    if (!this._userInteracted) this._fitOrCenter();
   }
 }
 
