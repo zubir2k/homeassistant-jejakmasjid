@@ -71,8 +71,22 @@ class AccountCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         session = async_get_clientsession(self.hass)
         self.api_calls += 1
+        clean_token = token.strip()
         try:
-            profile_data = await async_fetch_user_profile(session, token, user_agent=USER_AGENT)
+            import yarl
+
+            session.cookie_jar.update_cookies(
+                {
+                    "better-auth.session_token": clean_token,
+                    "__Secure-better-auth.session_token": clean_token,
+                },
+                response_url=yarl.URL("https://apiv2.jejakmasjid.my"),
+            )
+        except Exception:
+            pass
+
+        try:
+            profile_data = await async_fetch_user_profile(session, clean_token, user_agent=USER_AGENT)
             data = {"me": profile_data}
         except JejakMasjidAuthError as err:
             ir.async_create_issue(
