@@ -13,7 +13,7 @@ An **unofficial**, community-built Home Assistant custom integration for [Jejak 
 
 Jejak Masjid is a free app for finding mosques and surau near you, at home or on your travels. Check prayer times and keep a record of every visit.
 
-> ### *"Jejak"*, pronounced *juh-JAHK*, is Malay/Indonesian for "trace," "track," or "footprint"
+> ### *"Jejak"*, pronounced *juh-JAHK*, is Malay for "trace," "track," or "footprint"
 
 <a href="https://apps.apple.com/my/app/jejak-masjid-masjid-journey/id6757920248"><img src="https://jejakmasjid.my/app-store-badge.svg" height="40"></a>&nbsp;<a href="https://play.google.com/store/apps/details?id=my.lonasoft.jejakmasjidmobile"><img src="https://jejakmasjid.my/play-store-badge.svg" height="40"></a>
 
@@ -139,7 +139,7 @@ data:
 
 1. Go to **Settings → Devices & Services → Jejak Masjid**, open the three-dot menu and select **Delete**. This also removes the card's dashboard resource and the local search cache.
 2. Remove any `custom:jejakmasjid-card` cards from your dashboards.
-3. If installed with HACS, remove the repository in HACS; if installed manually, delete `config/custom_components/jejakmasjid`. Restart Home Assistant.
+3. If installed with Marketplace/HACS, remove the repository in Marketplace/HACS; if installed manually, delete `/custom_components/jejakmasjid`. Restart Home Assistant.
 
 ## Credits & Attribution
 
@@ -148,12 +148,12 @@ data:
 
 ## Disclaimer
 
-This is an **unofficial, community-developed** integration. While built with the gracious blessing and API support from the Jejak Masjid developer, it is not an official product of or formally affiliated with Lonasoft. Please do not contact the Jejak Masjid app support team for Home Assistant integration issues — open an issue on this repository instead.
+This is an **unofficial, community-developed** integration. While built with the gracious blessing and API support from the Jejak Masjid developer, it is not an official product of or formally affiliated with Lonasoft. Please do not contact the Jejak Masjid app support team for Home Assistant integration issues, open an issue on this repository instead.
 
 ## Join the Community
 
-- 🇲🇾 **Home Assistant Malaysia**: Join our local smart home discussions on [Facebook - Home Assistant Malaysia](https://www.facebook.com/groups/homeassistantmalaysia)
-- 💬 **Home Assistant Community**: Share automations and feedback on the official [Home Assistant Community Forum](https://community.home-assistant.io/)
+- 🇲🇾 **Home Assistant Malaysia** on [Facebook](https://www.facebook.com/groups/homeassistantmalaysia)
+- 💬 **Home Assistant** [Community Forum](https://community.home-assistant.io/t/custom-integration-jejak-masjid-nearby-mosque-musolla-surau-finder-for-home-assistant/1035858)
 
 ---
 
