@@ -40,19 +40,31 @@ class AccountError(Exception):
 async def async_send_otp(hass: HomeAssistant, email: str) -> None:
     """Ask Jejak Masjid to email a sign-in code."""
     session = async_get_clientsession(hass)
+    if getattr(session, "cookie_jar", None) is not None:
+        try:
+            session.cookie_jar.clear_domain("apiv2.jejakmasjid.my")
+        except Exception:
+            pass
     try:
         await async_send_email_otp(session, email, user_agent=USER_AGENT)
     except (JejakMasjidAuthError, JejakMasjidError) as err:
+        _LOGGER.warning("Send OTP failed for %s: %s", email, err)
         raise AccountError(str(err)) from err
 
 
 async def async_verify_otp(hass: HomeAssistant, email: str, otp: str) -> str:
     """Exchange the emailed code for a session token."""
     session = async_get_clientsession(hass)
+    if getattr(session, "cookie_jar", None) is not None:
+        try:
+            session.cookie_jar.clear_domain("apiv2.jejakmasjid.my")
+        except Exception:
+            pass
     try:
         _data, token = await async_verify_email_otp(session, email, otp, user_agent=USER_AGENT)
         return token
     except (JejakMasjidAuthError, JejakMasjidError) as err:
+        _LOGGER.warning("Verify OTP failed for %s: %s", email, err)
         raise AccountError(str(err)) from err
 
 

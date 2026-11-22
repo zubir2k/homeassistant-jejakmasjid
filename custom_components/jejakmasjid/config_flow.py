@@ -1,6 +1,7 @@
 """Config flow for Jejak Masjid."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import aiohttp
@@ -45,6 +46,8 @@ from .const import (
     MIN_SCAN_INTERVAL,
     USER_AGENT,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 RADIUS_SELECTOR = NumberSelector(
     NumberSelectorConfig(
@@ -173,7 +176,8 @@ class JejakMasjidOptionsFlow(OptionsFlow):
             self._person = user_input.get(CONF_PERSON)
             try:
                 await async_send_otp(self.hass, self._email)
-            except AccountError:
+            except AccountError as err:
+                _LOGGER.warning("Send OTP error in config flow: %s", err)
                 errors["base"] = "otp_send_failed"
             else:
                 return await self.async_step_otp()
@@ -194,7 +198,8 @@ class JejakMasjidOptionsFlow(OptionsFlow):
         if user_input is not None:
             try:
                 token = await async_verify_otp(self.hass, self._email, user_input["otp"].strip())
-            except AccountError:
+            except AccountError as err:
+                _LOGGER.warning("Verify OTP error in config flow: %s", err)
                 errors["base"] = "invalid_otp"
             else:
                 self.hass.config_entries.async_update_entry(

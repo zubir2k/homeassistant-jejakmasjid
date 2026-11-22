@@ -273,7 +273,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "python-jejakmasjid", specifier = ">=0.3.2" }]
+requires-dist = [{ name = "python-jejakmasjid", specifier = ">=0.3.3" }]
 
 [[package]]
 name = "idna"
@@ -535,14 +535,14 @@ wheels = [
 
 [[package]]
 name = "python-jejakmasjid"
-version = "0.3.2"
+version = "0.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/86/8d/c847d79f1804dbccbb3cc4779eb04cf9a6566e6c50ca3720195ba15338da/python_jejakmasjid-0.3.2.tar.gz", hash = "sha256:6146ddd5d29dd56d01cd53821daaa9c6d57e2c0abbf60b6f8e521ce0cf164efd", size = 14136, upload-time = "2026-11-22T15:14:20.032Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/67/77/86f9cff418054ee16b043125889ae1f4344f52a0a26a2c04f79aae4f6835/python_jejakmasjid-0.3.3.tar.gz", hash = "sha256:81027c9399e0f7335c77603596d744a257bf4549db4073ac775cf838eb9917de", size = 14154, upload-time = "2026-11-22T15:44:55.649Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/99/34/1806d156555c8da0f6dc4a9685edd7dcb0bcc8b5a0b8e76214c2ee2585e7/python_jejakmasjid-0.3.2-py3-none-any.whl", hash = "sha256:666b4f6c0b5a616000a181303717a7632b9ba06660074ff107b21f8dbd4bddac", size = 12251, upload-time = "2026-11-22T15:14:18.924Z" },
+    { url = "https://files.pythonhosted.org/packages/13/23/b7479afe9b080c6099740dacfe8287d6229146914dcb68aea70e37d4e300/python_jejakmasjid-0.3.3-py3-none-any.whl", hash = "sha256:e5d331f7485b327faaefd9c797913525289cb58c830f471eddc0764ee5b5302f", size = 12288, upload-time = "2026-11-22T15:44:54.483Z" },
 ]
 
 [[package]]
