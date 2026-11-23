@@ -14,7 +14,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from jejakmasjid import JejakMasjidError, async_fetch_nearby, haversine_km, rank
+from jejakmasjid import API_TYPE_MAP, JejakMasjidError, async_fetch_nearby, haversine_km, rank
 from .const import (
     CACHE_STORAGE_VERSION,
     CACHE_TTL_HOURS,
@@ -25,8 +25,6 @@ from .const import (
     DOMAIN,
     FAILURE_BACKOFF_MINUTES,
     FETCH_RADIUS_KM,
-    HA_V1_NEARBY_URL,
-    MAP_NEARBY_URL,
     MAX_CACHED_SEARCHES,
     MIN_REFETCH_KM,
     NEARBY_LIMIT,
@@ -148,19 +146,9 @@ class JejakMasjidCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             if search is None and (self._backoff_until is None or now >= self._backoff_until):
                 clat, clon = round(lat, COORD_DECIMALS), round(lon, COORD_DECIMALS)
                 try:
-                    try:
-                        places = await async_fetch_nearby(
-                            session, clat, clon, FETCH_RADIUS_KM, endpoint_url=MAP_NEARBY_URL
-                        )
-                    except JejakMasjidError as map_err:
-                        _LOGGER.debug(
-                            "Map nearby endpoint failed for %s (%s), trying dedicated HA endpoint",
-                            key,
-                            map_err,
-                        )
-                        places = await async_fetch_nearby(
-                            session, clat, clon, FETCH_RADIUS_KM, endpoint_url=HA_V1_NEARBY_URL
-                        )
+                    places = await async_fetch_nearby(
+                        session, clat, clon, FETCH_RADIUS_KM, api_type=API_TYPE_MAP
+                    )
                 except JejakMasjidError as err:
                     errors.append(str(err))
                     self._backoff_until = now + timedelta(minutes=FAILURE_BACKOFF_MINUTES)
