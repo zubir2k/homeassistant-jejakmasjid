@@ -15,9 +15,9 @@ const TYPES = {
 };
 const FILTERS = ["all", "masjid", "surau", "other"];
 const T = {
-  en: { checkin: "Check in", here: "You're here", nearest: "Nearest", refresh: "Refresh location", all: "All", within: "within", places: "places", none: "Nothing of this type nearby.", maps: "Maps", go: "Navigate",
+  en: { checkin: "Check in", here: "You're here", nearest: "Nearest", refresh: "Refresh location", all: "All", within: "within", places: "places", none: "Nothing of this type nearby.", maps: "Maps", go: "Navigate", info: "Info",
         home: "Home", noData: "No Jejak Masjid sensors yet. Add the Jejak Masjid integration first.", empty: "No masjid or surau found within" },
-  ms: { checkin: "Daftar masuk", here: "Anda di sini", nearest: "Terdekat", refresh: "Muat semula lokasi", all: "Semua", within: "dalam", places: "tempat", none: "Tiada tempat jenis ini berdekatan.", maps: "Peta", go: "Navigasi",
+  ms: { checkin: "Daftar masuk", here: "Anda di sini", nearest: "Terdekat", refresh: "Muat semula lokasi", all: "Semua", within: "dalam", places: "tempat", none: "Tiada tempat jenis ini berdekatan.", maps: "Peta", go: "Navigasi", info: "Info",
         home: "Rumah", noData: "Tiada sensor Jejak Masjid lagi. Tambah integrasi Jejak Masjid dahulu.", empty: "Tiada masjid atau surau dalam" },
 };
 const IMG = (n) => `${BASE}/img/${n}.png?v=${VERSION}`;
@@ -510,7 +510,7 @@ class JejakMasjidCard extends HTMLElement {
     const validUrl = safeHttpUrl(p.url);
     return `<b>${validUrl ? `<a href="${esc(validUrl)}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none">${esc(nice(p.name))}</a>` : esc(nice(p.name))}</b><br>${fmtDist(p)} · ${TYPES[p.g][this._lang]}${here ? `<br><span class="pop-here">${t.here}</span>` : ""}
       <div class="pop-act">${here ? `<a class="ci" href="${checkinUrl(this._cfg.checkin_uri, p)}">${ICON_PIN}${t.checkin}</a>` : ""}
-      ${validUrl ? `<a class="jm" href="${esc(validUrl)}" target="_blank" rel="noopener noreferrer">Jejak Masjid</a>` : ""}
+      ${validUrl ? `<a class="jm" href="${esc(validUrl)}" target="_blank" rel="noopener noreferrer">${t.info}</a>` : ""}
       <a class="m" href="${mapsUrl(p)}" target="_blank" rel="noopener">${t.maps}</a><a class="g" href="${navUrl(p)}" target="${navTarget()}" data-nav="${esc(p.id)}" rel="noopener">${t.go}</a></div>`;
   }
 
