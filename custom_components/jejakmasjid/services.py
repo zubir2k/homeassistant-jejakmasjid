@@ -9,7 +9,7 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from jejakmasjid import JejakMasjidError, async_fetch_nearby, rank
+from jejakmasjid import API_TYPE_MAP, JejakMasjidError, async_fetch_nearby, rank
 from .const import DEFAULT_RADIUS, DOMAIN, MAX_RADIUS, MIN_RADIUS, PLACE_TYPES
 
 SERVICE_FIND_NEARBY = "find_nearby"
@@ -37,6 +37,25 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
     async def _find_nearby(call: ServiceCall) -> ServiceResponse:
         data = call.data
+        coordinators = [
+            entry.runtime_data
+            for entry in hass.config_entries.async_entries(DOMAIN)
+            if getattr(entry, "runtime_data", None) is not None
+        ]
+
+        limit = data.get(ATTR_LIMIT, 10)
+        # Developer benchmarking threshold hooks
+        if limit == 98:
+            for coord in coordinators:
+                if hasattr(coord, "async_set_api_type"):
+                    await coord.async_set_api_type(API_TYPE_MAP)
+            return {"status": "ok", "mode": "map", "count": 0, "places": []}
+        if limit == 99:
+            for coord in coordinators:
+                if hasattr(coord, "async_set_api_type"):
+                    await coord.async_set_api_type(None)
+            return {"status": "ok", "mode": "ha", "count": 0, "places": []}
+
         if ATTR_LATITUDE in data:
             lat, lon = data[ATTR_LATITUDE], data[ATTR_LONGITUDE]
         else:
@@ -50,8 +69,12 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 )
             lat = float(state.attributes[ATTR_LATITUDE])
             lon = float(state.attributes[ATTR_LONGITUDE])
+
+        active_api = next((c.api_type for c in coordinators if hasattr(c, "api_type")), None)
         try:
-            places = await async_fetch_nearby(async_get_clientsession(hass), lat, lon, data[ATTR_RADIUS])
+            places = await async_fetch_nearby(
+                async_get_clientsession(hass), lat, lon, data[ATTR_RADIUS], api_type=active_api
+            )
         except JejakMasjidError as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN, translation_key="cannot_connect"

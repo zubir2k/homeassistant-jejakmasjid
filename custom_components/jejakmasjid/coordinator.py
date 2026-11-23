@@ -14,7 +14,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from jejakmasjid import JejakMasjidError, async_fetch_nearby, haversine_km, rank
+from jejakmasjid import API_TYPE_MAP, JejakMasjidError, async_fetch_nearby, haversine_km, rank
 from .const import (
     CACHE_STORAGE_VERSION,
     CACHE_TTL_HOURS,
@@ -82,6 +82,7 @@ class JejakMasjidCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         )
         self.radius: int = int(entry.options.get(CONF_RADIUS, DEFAULT_RADIUS))
         self.reach_km: float = max(MIN_REFETCH_KM, FETCH_RADIUS_KM - self.radius)
+        self.api_type: str | None = None
         self._pool: list[_Search] = []
         self._backoff_until: datetime | None = None
         self._store: Store[dict[str, Any]] = Store(hass, CACHE_STORAGE_VERSION, f"{DOMAIN}.cache")
@@ -91,13 +92,29 @@ class JejakMasjidCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         """Restore searches saved before the last restart."""
         try:
             data = await self._store.async_load()
+            if data and "api_type" in data:
+                self.api_type = data["api_type"]
             self._pool = [_Search.from_dict(item) for item in (data or {}).get("searches", [])]
         except (KeyError, TypeError, ValueError):
             _LOGGER.debug("Ignoring unreadable search cache")
             self._pool = []
 
     def _save_cache(self) -> None:
-        self._store.async_delay_save(lambda: {"searches": [s.as_dict() for s in self._pool]}, 10)
+        self._store.async_delay_save(
+            lambda: {
+                "api_type": self.api_type,
+                "searches": [s.as_dict() for s in self._pool],
+            },
+            10,
+        )
+
+    async def async_set_api_type(self, api_type: str | None) -> None:
+        """Switch the active API type, flush search cache, and refresh coordinator."""
+        if self.api_type != api_type:
+            self.api_type = api_type
+            self._pool.clear()
+            self._save_cache()
+            await self.async_refresh()
 
     def tracked_locations(self) -> dict[str, tuple[str, float, float]]:
         """{entity_id: (friendly name, lat, lon)} for every person with GPS, and Home."""
@@ -144,7 +161,9 @@ class JejakMasjidCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             if search is None and (self._backoff_until is None or now >= self._backoff_until):
                 clat, clon = round(lat, COORD_DECIMALS), round(lon, COORD_DECIMALS)
                 try:
-                    places = await async_fetch_nearby(session, clat, clon, FETCH_RADIUS_KM)
+                    places = await async_fetch_nearby(
+                        session, clat, clon, FETCH_RADIUS_KM, api_type=self.api_type
+                    )
                 except JejakMasjidError as err:
                     errors.append(str(err))
                     self._backoff_until = now + timedelta(minutes=FAILURE_BACKOFF_MINUTES)
