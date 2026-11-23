@@ -41,10 +41,11 @@ function loadLeaflet() {
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const safeHttpUrl = (url) => {
-  if (!url) return null;
+  if (!url || typeof url !== "string") return null;
+  const clean = url.trim();
+  if (!/^https?:\/\//i.test(clean)) return null;
   try {
-    const base = typeof location !== "undefined" ? location.href : "https://localhost";
-    const u = new URL(url, base);
+    const u = new URL(clean);
     if (u.protocol === "http:" || u.protocol === "https:") {
       return u.href;
     }
