@@ -82,7 +82,11 @@ def async_setup_services(hass: HomeAssistant) -> None:
         ranked = rank(places, lat, lon)
         if ATTR_TYPE in data:
             ranked = [p for p in ranked if p["type"] == data[ATTR_TYPE]]
-        return {"count": len(ranked), "places": ranked[: data[ATTR_LIMIT]]}
+        return {
+            "mode": active_api or "ha",
+            "count": len(ranked),
+            "places": ranked[: data[ATTR_LIMIT]],
+        }
 
     hass.services.async_register(
         DOMAIN,

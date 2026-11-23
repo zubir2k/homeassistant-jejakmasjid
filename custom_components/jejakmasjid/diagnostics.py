@@ -17,6 +17,7 @@ async def async_get_config_entry_diagnostics(
     coordinator = entry.runtime_data
     return {
         "options": dict(entry.options),
+        "api_type": coordinator.api_type or "ha",
         "last_update_success": coordinator.last_update_success,
         "update_interval": str(coordinator.update_interval),
         "api_calls_since_start": coordinator.api_calls,

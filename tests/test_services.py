@@ -35,5 +35,6 @@ async def test_find_nearby_service(hass: HomeAssistant) -> None:
         )
 
     assert result["count"] == 1
+    assert result["mode"] == "ha"
     assert len(result["places"]) == 1
     assert result["places"][0]["name"] == "Surau Al-Falah"
