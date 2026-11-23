@@ -4,7 +4,9 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 DOMAIN = "jejakmasjid"
 
 API_BASE = "https://apiv2.jejakmasjid.my"
-NEARBY_URL = f"{API_BASE}/api/map/nearby"
+MAP_NEARBY_URL = f"{API_BASE}/api/map/nearby"
+HA_V1_NEARBY_URL = f"{API_BASE}/api/ha/v1/masjids/nearby"
+NEARBY_URL = MAP_NEARBY_URL
 HEALTH_URL = f"{API_BASE}/"
 USER_AGENT = "homeassistant-jejakmasjid (+https://github.com/zubir2k/homeassistant-jejakmasjid)"
 

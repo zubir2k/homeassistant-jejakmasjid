@@ -10,7 +10,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from jejakmasjid import JejakMasjidError, async_fetch_nearby, rank
-from .const import DEFAULT_RADIUS, DOMAIN, MAX_RADIUS, MIN_RADIUS, PLACE_TYPES
+from .const import DEFAULT_RADIUS, DOMAIN, HA_V1_NEARBY_URL, MAP_NEARBY_URL, MAX_RADIUS, MIN_RADIUS, PLACE_TYPES
 
 SERVICE_FIND_NEARBY = "find_nearby"
 ATTR_ENTITY_ID = "entity_id"
@@ -51,7 +51,22 @@ def async_setup_services(hass: HomeAssistant) -> None:
             lat = float(state.attributes[ATTR_LATITUDE])
             lon = float(state.attributes[ATTR_LONGITUDE])
         try:
-            places = await async_fetch_nearby(async_get_clientsession(hass), lat, lon, data[ATTR_RADIUS])
+            try:
+                places = await async_fetch_nearby(
+                    async_get_clientsession(hass),
+                    lat,
+                    lon,
+                    data[ATTR_RADIUS],
+                    endpoint_url=MAP_NEARBY_URL,
+                )
+            except JejakMasjidError:
+                places = await async_fetch_nearby(
+                    async_get_clientsession(hass),
+                    lat,
+                    lon,
+                    data[ATTR_RADIUS],
+                    endpoint_url=HA_V1_NEARBY_URL,
+                )
         except JejakMasjidError as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN, translation_key="cannot_connect"
