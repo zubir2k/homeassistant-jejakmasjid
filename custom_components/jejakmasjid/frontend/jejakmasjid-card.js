@@ -42,6 +42,17 @@ function loadLeaflet() {
 }
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const safeHttpUrl = (url) => {
+  if (!url) return null;
+  try {
+    const base = typeof location !== "undefined" ? location.href : "https://localhost";
+    const u = new URL(url, base);
+    if (u.protocol === "http:" || u.protocol === "https:") {
+      return u.href;
+    }
+  } catch (_) {}
+  return null;
+};
 const mapsUrl = (p) => `https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}`;
 // Navigate: Android gets a geo: link, so the phone shows its own "Open with" chooser (Maps, Waze, ...);
 // iPhone/iPad gets Apple Maps; everything else falls back to Google Maps directions.
@@ -476,9 +487,10 @@ class JejakMasjidCard extends HTMLElement {
         ? shown.slice(0, this._cfg.max_items).map((p, i) => {
             const top = i === 0;
             const here = this._atPlace(p);
+            const validUrl = safeHttpUrl(p.url);
             return `<div class="row${top ? " top" : ""}">
             <img class="ic" src="${IMG("marker-" + p.g)}" alt="">
-            <div class="mid">${top ? `<div class="tag${here ? " here" : ""}">${here ? t.here : t.nearest}</div>` : ""}<div class="nm">${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${esc(nice(p.name))}</a>` : esc(nice(p.name))}</div><div class="sub">${fmtDist(p)} · ${TYPES[p.g][this._lang]}</div></div>
+            <div class="mid">${top ? `<div class="tag${here ? " here" : ""}">${here ? t.here : t.nearest}</div>` : ""}<div class="nm">${validUrl ? `<a href="${esc(validUrl)}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none">${esc(nice(p.name))}</a>` : esc(nice(p.name))}</div><div class="sub">${fmtDist(p)} · ${TYPES[p.g][this._lang]}</div></div>
             <div class="act">${top && here ? `<a class="ci" href="${checkinUrl(this._cfg.checkin_uri, p)}">${ICON_PIN}${t.checkin}</a>` : ""}<a class="m" href="${mapsUrl(p)}" target="_blank" rel="noopener">${t.maps}</a><a class="g" href="${navUrl(p)}" target="${navTarget()}" data-nav="${esc(p.id)}" rel="noopener">${t.go}</a></div>
           </div>`;
           }).join("")
@@ -496,9 +508,10 @@ class JejakMasjidCard extends HTMLElement {
   _popup(p) {
     const t = T[this._lang];
     const here = this._atPlace(p);
-    return `<b>${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${esc(nice(p.name))}</a>` : esc(nice(p.name))}</b><br>${fmtDist(p)} · ${TYPES[p.g][this._lang]}${here ? `<br><span class="pop-here">${t.here}</span>` : ""}
+    const validUrl = safeHttpUrl(p.url);
+    return `<b>${validUrl ? `<a href="${esc(validUrl)}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none">${esc(nice(p.name))}</a>` : esc(nice(p.name))}</b><br>${fmtDist(p)} · ${TYPES[p.g][this._lang]}${here ? `<br><span class="pop-here">${t.here}</span>` : ""}
       <div class="pop-act">${here ? `<a class="ci" href="${checkinUrl(this._cfg.checkin_uri, p)}">${ICON_PIN}${t.checkin}</a>` : ""}
-      ${p.url ? `<a class="jm" href="${esc(p.url)}" target="_blank" rel="noopener">Jejak Masjid</a>` : ""}
+      ${validUrl ? `<a class="jm" href="${esc(validUrl)}" target="_blank" rel="noopener noreferrer">Jejak Masjid</a>` : ""}
       <a class="m" href="${mapsUrl(p)}" target="_blank" rel="noopener">${t.maps}</a><a class="g" href="${navUrl(p)}" target="${navTarget()}" data-nav="${esc(p.id)}" rel="noopener">${t.go}</a></div>`;
   }
 
