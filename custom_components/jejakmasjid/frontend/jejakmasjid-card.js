@@ -54,27 +54,38 @@ const safeHttpUrl = (url) => {
   } catch (_) {}
   return null;
 };
-const mapsUrl = (p) => `https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}`;
+const numCoord = (val) => {
+  const n = Number(val);
+  return Number.isFinite(n) ? n : 0;
+};
+const mapsUrl = (p) => `https://www.google.com/maps/search/?api=1&query=${numCoord(p.latitude)},${numCoord(p.longitude)}`;
 // Navigate: Android gets a geo: link, so the phone shows its own "Open with" chooser (Maps, Waze, ...);
 // iPhone/iPad gets Apple Maps; everything else falls back to Google Maps directions.
 const UA = navigator.userAgent || "";
 const IS_ANDROID = /Android/i.test(UA);
 const IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
-const navUrl = (p) =>
-  IS_ANDROID ? `geo:${p.latitude},${p.longitude}?q=${p.latitude},${p.longitude}(${encodeURIComponent(nice(p.name))})`
-  : IS_IOS ? `maps://?daddr=${p.latitude},${p.longitude}&dirflg=d`
-  : `https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}&travelmode=driving`;
+const navUrl = (p) => {
+  const lat = numCoord(p.latitude);
+  const lon = numCoord(p.longitude);
+  return IS_ANDROID ? `geo:${lat},${lon}?q=${lat},${lon}(${encodeURIComponent(nice(p.name))})`
+    : IS_IOS ? `maps://?daddr=${lat},${lon}&dirflg=d`
+    : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving`;
+};
 const navTarget = () => (IS_ANDROID || IS_IOS ? "_self" : "_blank");
 // iOS has no system "Open with" for directions, so the card shows its own sheet with the apps people use here.
-const iosApps = (p) => [
-  { n: "Apple Maps", u: `maps://?daddr=${p.latitude},${p.longitude}&dirflg=d` },
-  { n: "Google Maps", u: `comgooglemaps://?daddr=${p.latitude},${p.longitude}&directionsmode=driving` },
-  { n: "Waze", u: `https://waze.com/ul?ll=${p.latitude},${p.longitude}&navigate=yes` },
-];
+const iosApps = (p) => {
+  const lat = numCoord(p.latitude);
+  const lon = numCoord(p.longitude);
+  return [
+    { n: "Apple Maps", u: `maps://?daddr=${lat},${lon}&dirflg=d` },
+    { n: "Google Maps", u: `comgooglemaps://?daddr=${lat},${lon}&directionsmode=driving` },
+    { n: "Waze", u: `https://waze.com/ul?ll=${lat},${lon}&navigate=yes` },
+  ];
+};
 // Check in: hand the place to the Jejak Masjid app. {id}, {lat}, {lng}, {name} are filled in.
 const DEFAULT_CHECKIN_URI = "jejakmasjidmobile://checkin"; // app scheme from the APK (Android + iOS share it); "jejakmasjidmobile://masjid/{id}" opens the place page instead
 const checkinUrl = (tpl, p) => (tpl || DEFAULT_CHECKIN_URI)
-  .replace(/\{id\}/g, encodeURIComponent(p.id)).replace(/\{lat\}/g, p.latitude).replace(/\{lng\}/g, p.longitude)
+  .replace(/\{id\}/g, encodeURIComponent(p.id)).replace(/\{lat\}/g, numCoord(p.latitude)).replace(/\{lng\}/g, numCoord(p.longitude))
   .replace(/\{name\}/g, encodeURIComponent(p.name || ""));
 const STORE = {
   android: "https://play.google.com/store/apps/details?id=my.lonasoft.jejakmasjidmobile",
@@ -115,11 +126,13 @@ const nice = (n) => (n && n === n.toUpperCase() ? n.toLowerCase().replace(/(^|[\
 const fmtDist = (p) => {
   let s = "";
   if (p.distance_m != null) {
-    s = p.distance_m < 1000 ? `${p.distance_m} m` : `${(p.distance_m / 1000).toFixed(1)} km`;
+    const dm = Number(p.distance_m);
+    s = dm < 1000 ? `${dm} m` : `${(dm / 1000).toFixed(1)} km`;
   } else if (p.distance_km != null) {
-    s = p.distance_km < 1 ? `${Math.round(p.distance_km * 1000)} m` : `${p.distance_km.toFixed(1)} km`;
+    const dkm = Number(p.distance_km);
+    s = dkm < 1 ? `${Math.round(dkm * 1000)} m` : `${dkm.toFixed(1)} km`;
   }
-  return p.direction ? `${s} (${p.direction})` : s;
+  return p.direction ? `${s} (${esc(p.direction)})` : s;
 };
 
 class JejakMasjidCard extends HTMLElement {
@@ -352,7 +365,7 @@ class JejakMasjidCard extends HTMLElement {
     const el = document.createElement("div");
     el.className = "sheet";
     el.innerHTML = `<div class="box"><div class="grp"><div class="ttl">${esc(nice(p.name))}</div>${iosApps(p)
-      .map((a) => `<a href="${a.u}">${a.n}</a>`).join("")}</div><div class="grp"><button>${this._lang === "ms" ? "Batal" : "Cancel"}</button></div></div>`;
+      .map((a) => `<a href="${esc(a.u)}">${esc(a.n)}</a>`).join("")}</div><div class="grp"><button>${this._lang === "ms" ? "Batal" : "Cancel"}</button></div></div>`;
     el.addEventListener("click", (e) => { if (e.target === el || e.target.closest("button") || e.target.closest("a")) setTimeout(() => el.remove(), 50); });
     this.shadowRoot.appendChild(el);
   }
@@ -482,23 +495,25 @@ class JejakMasjidCard extends HTMLElement {
     ).join("");
 
     this._cur = cur;
+    const escRadius = esc(radius);
     $("list").innerHTML = !places.length
-      ? `<div class="empty">${t.empty} ${radius} km.</div>`
+      ? `<div class="empty">${t.empty} ${escRadius} km.</div>`
       : shown.length
         ? shown.slice(0, this._cfg.max_items).map((p, i) => {
             const top = i === 0;
             const here = this._atPlace(p);
             const validUrl = safeHttpUrl(p.url);
+            const ci = esc(checkinUrl(this._cfg.checkin_uri, p));
             return `<div class="row${top ? " top" : ""}">
             <img class="ic" src="${IMG("marker-" + p.g)}" alt="">
             <div class="mid">${top ? `<div class="tag${here ? " here" : ""}">${here ? t.here : t.nearest}</div>` : ""}<div class="nm">${validUrl ? `<a href="${esc(validUrl)}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none">${esc(nice(p.name))}</a>` : esc(nice(p.name))}</div><div class="sub">${fmtDist(p)} · ${TYPES[p.g][this._lang]}</div></div>
-            <div class="act">${top && here ? `<a class="ci" href="${checkinUrl(this._cfg.checkin_uri, p)}">${ICON_PIN}${t.checkin}</a>` : ""}<a class="m" href="${mapsUrl(p)}" target="_blank" rel="noopener">${t.maps}</a><a class="g" href="${navUrl(p)}" target="${navTarget()}" data-nav="${esc(p.id)}" rel="noopener">${t.go}</a></div>
+            <div class="act">${top && here ? `<a class="ci" href="${ci}">${ICON_PIN}${t.checkin}</a>` : ""}<a class="m" href="${mapsUrl(p)}" target="_blank" rel="noopener">${t.maps}</a><a class="g" href="${navUrl(p)}" target="${navTarget()}" data-nav="${esc(p.id)}" rel="noopener">${t.go}</a></div>
           </div>`;
           }).join("")
         : `<div class="empty">${t.none}</div>`;
 
     const fetched = cur.st.attributes.fetched ? new Date(cur.st.attributes.fetched) : null;
-    $("foot").innerHTML = `<span>${places.length} ${t.places} ${t.within} ${radius} km</span><span>${
+    $("foot").innerHTML = `<span>${places.length} ${t.places} ${t.within} ${escRadius} km</span><span>${
       fetched ? fetched.toLocaleString(this._lang === "ms" ? "ms-MY" : "en-MY", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : ""}</span>`;
 
     this._cur = cur;
@@ -510,8 +525,9 @@ class JejakMasjidCard extends HTMLElement {
     const t = T[this._lang];
     const here = this._atPlace(p);
     const validUrl = safeHttpUrl(p.url);
+    const ci = esc(checkinUrl(this._cfg.checkin_uri, p));
     return `<b>${validUrl ? `<a href="${esc(validUrl)}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none">${esc(nice(p.name))}</a>` : esc(nice(p.name))}</b><br>${fmtDist(p)} · ${TYPES[p.g][this._lang]}${here ? `<br><span class="pop-here">${t.here}</span>` : ""}
-      <div class="pop-act">${here ? `<a class="ci" href="${checkinUrl(this._cfg.checkin_uri, p)}">${ICON_PIN}${t.checkin}</a>` : ""}
+      <div class="pop-act">${here ? `<a class="ci" href="${ci}">${ICON_PIN}${t.checkin}</a>` : ""}
       ${validUrl ? `<a class="jm" href="${esc(validUrl)}" target="_blank" rel="noopener noreferrer">${t.info}</a>` : ""}
       <a class="m" href="${mapsUrl(p)}" target="_blank" rel="noopener">${t.maps}</a><a class="g" href="${navUrl(p)}" target="${navTarget()}" data-nav="${esc(p.id)}" rel="noopener">${t.go}</a></div>`;
   }

@@ -1,9 +1,9 @@
 """Coordinator: nearby masjid and surau for every person with GPS and the Home zone."""
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -14,10 +14,18 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from jejakmasjid import API_TYPE_MAP, JejakMasjidError, async_fetch_nearby, haversine_km, rank
+from jejakmasjid import (
+    API_TYPE_MAP,
+    JejakMasjidError,
+    async_fetch_nearby,
+    haversine_km,
+    rank,
+)
+
 from .const import (
     CACHE_STORAGE_VERSION,
     CACHE_TTL_HOURS,
+    CONF_DATA_SOURCE,
     CONF_RADIUS,
     COORD_DECIMALS,
     DEFAULT_RADIUS,
@@ -84,7 +92,8 @@ class JejakMasjidCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         )
         self.radius: int = int(entry.options.get(CONF_RADIUS, DEFAULT_RADIUS))
         self.reach_km: float = max(MIN_REFETCH_KM, FETCH_RADIUS_KM - self.radius)
-        self.api_type: str | None = None
+        raw_source = str(entry.options.get(CONF_DATA_SOURCE) or "").strip().lower()
+        self.api_type: str | None = API_TYPE_MAP if raw_source == "map" else None
         self._pool: list[_Search] = []
         self._backoff_until: datetime | None = None
         self._store: Store[dict[str, Any]] = Store(hass, CACHE_STORAGE_VERSION, f"{DOMAIN}.cache")
@@ -94,9 +103,12 @@ class JejakMasjidCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         """Restore searches saved before the last restart."""
         try:
             data = await self._store.async_load()
-            if data and "api_type" in data:
-                self.api_type = data["api_type"]
-            self._pool = [_Search.from_dict(item) for item in (data or {}).get("searches", [])]
+            cached_api = data.get("api_type") if data else None
+            if cached_api != self.api_type:
+                self._pool = []
+                self._save_cache()
+            else:
+                self._pool = [_Search.from_dict(item) for item in (data or {}).get("searches", [])]
         except (KeyError, TypeError, ValueError):
             _LOGGER.debug("Ignoring unreadable search cache")
             self._pool = []

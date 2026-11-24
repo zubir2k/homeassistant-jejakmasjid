@@ -1,6 +1,7 @@
 """Jejak Masjid account support."""
 from __future__ import annotations
 
+import contextlib
 import logging
 from datetime import timedelta
 from typing import Any
@@ -41,10 +42,8 @@ async def async_send_otp(hass: HomeAssistant, email: str) -> None:
     """Ask Jejak Masjid to email a sign-in code."""
     session = async_get_clientsession(hass)
     if getattr(session, "cookie_jar", None) is not None:
-        try:
+        with contextlib.suppress(Exception):
             session.cookie_jar.clear_domain("apiv2.jejakmasjid.my")
-        except Exception:
-            pass
     try:
         await async_send_email_otp(session, email, user_agent=USER_AGENT)
     except (JejakMasjidAuthError, JejakMasjidError) as err:
@@ -56,10 +55,8 @@ async def async_verify_otp(hass: HomeAssistant, email: str, otp: str) -> str:
     """Exchange the emailed code for a session token."""
     session = async_get_clientsession(hass)
     if getattr(session, "cookie_jar", None) is not None:
-        try:
+        with contextlib.suppress(Exception):
             session.cookie_jar.clear_domain("apiv2.jejakmasjid.my")
-        except Exception:
-            pass
     try:
         _data, token = await async_verify_email_otp(session, email, otp, user_agent=USER_AGENT)
         return token

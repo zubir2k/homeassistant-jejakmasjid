@@ -19,6 +19,10 @@ DEFAULT_RADIUS = 3
 MIN_RADIUS = 1
 MAX_RADIUS = 5
 
+# Data source provider (optional in OptionsFlow: "ha" or "map")
+CONF_DATA_SOURCE = "data_source"
+DEFAULT_DATA_SOURCE = ""
+
 # Every API search asks for the API's maximum radius, while sensors and the card show only the
 # chosen radius. A cached search keeps serving a location until it moves FETCH_RADIUS_KM -
 # radius away from the search centre (at least MIN_REFETCH_KM), so short trips reuse it.

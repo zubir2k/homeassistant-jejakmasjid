@@ -35,7 +35,9 @@ from .account import (
     async_verify_otp,
 )
 from .const import (
+    CONF_DATA_SOURCE,
     CONF_RADIUS,
+    DEFAULT_DATA_SOURCE,
     DEFAULT_RADIUS,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -61,6 +63,9 @@ INTERVAL_SELECTOR = NumberSelector(
 )
 
 
+DATA_SOURCE_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT))
+
+
 def _schema(radius: int, interval: int) -> vol.Schema:
     return vol.Schema(
         {
@@ -70,11 +75,30 @@ def _schema(radius: int, interval: int) -> vol.Schema:
     )
 
 
+def _options_schema(radius: int, interval: int, data_source: str = DEFAULT_DATA_SOURCE) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Required(CONF_RADIUS, default=radius): RADIUS_SELECTOR,
+            vol.Required(CONF_SCAN_INTERVAL, default=interval): INTERVAL_SELECTOR,
+            vol.Optional(CONF_DATA_SOURCE, default=data_source): DATA_SOURCE_SELECTOR,
+        }
+    )
+
+
 def _clean(user_input: dict[str, Any]) -> dict[str, int]:
     return {
         CONF_RADIUS: int(user_input[CONF_RADIUS]),
         CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL]),
     }
+
+
+def _clean_options(user_input: dict[str, Any]) -> dict[str, Any]:
+    cleaned: dict[str, Any] = _clean(user_input)
+    if CONF_DATA_SOURCE in user_input:
+        raw_source = str(user_input[CONF_DATA_SOURCE] or "").strip().lower()
+        if raw_source:
+            cleaned[CONF_DATA_SOURCE] = raw_source
+    return cleaned
 
 
 async def _async_can_connect(hass: HomeAssistant) -> bool:
@@ -159,12 +183,14 @@ class JejakMasjidOptionsFlow(OptionsFlow):
 
     async def async_step_settings(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
-            return self.async_create_entry(data=_clean(user_input))
+            return self.async_create_entry(data=_clean_options(user_input))
         opts = self.config_entry.options
         return self.async_show_form(
             step_id="settings",
-            data_schema=_schema(
-                opts.get(CONF_RADIUS, DEFAULT_RADIUS), opts.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+            data_schema=_options_schema(
+                opts.get(CONF_RADIUS, DEFAULT_RADIUS),
+                opts.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+                opts.get(CONF_DATA_SOURCE, DEFAULT_DATA_SOURCE),
             ),
         )
 

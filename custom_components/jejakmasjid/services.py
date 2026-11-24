@@ -2,14 +2,19 @@
 from __future__ import annotations
 
 import voluptuous as vol
-
 from homeassistant.const import ATTR_LATITUDE, ATTR_LONGITUDE
-from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+)
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from jejakmasjid import API_TYPE_MAP, JejakMasjidError, async_fetch_nearby, rank
+from jejakmasjid import JejakMasjidError, async_fetch_nearby, rank
+
 from .const import DEFAULT_RADIUS, DOMAIN, MAX_RADIUS, MIN_RADIUS, PLACE_TYPES
 
 SERVICE_FIND_NEARBY = "find_nearby"
@@ -44,17 +49,6 @@ def async_setup_services(hass: HomeAssistant) -> None:
         ]
 
         limit = data.get(ATTR_LIMIT, 10)
-        # Developer benchmarking threshold hooks
-        if limit == 98:
-            for coord in coordinators:
-                if hasattr(coord, "async_set_api_type"):
-                    await coord.async_set_api_type(API_TYPE_MAP)
-            return {"status": "ok", "mode": "map", "count": 0, "places": []}
-        if limit == 99:
-            for coord in coordinators:
-                if hasattr(coord, "async_set_api_type"):
-                    await coord.async_set_api_type(None)
-            return {"status": "ok", "mode": "ha", "count": 0, "places": []}
 
         if ATTR_LATITUDE in data:
             lat, lon = data[ATTR_LATITUDE], data[ATTR_LONGITUDE]
@@ -85,7 +79,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         return {
             "mode": active_api or "ha",
             "count": len(ranked),
-            "places": ranked[: data[ATTR_LIMIT]],
+            "places": ranked[:limit],
         }
 
     hass.services.async_register(

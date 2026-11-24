@@ -27,11 +27,13 @@
         "title": "Jejak Masjid settings",
         "data": {
           "radius": "Search radius",
-          "scan_interval": "Update interval"
+          "scan_interval": "Update interval",
+          "data_source": "Data source (optional)"
         },
         "data_description": {
           "radius": "How far around each person and Home to look, in km (1 to 5; Jejak Masjid caps searches at 5 km).",
-          "scan_interval": "How often, in minutes, to check where everyone is. Jejak Masjid is only asked again when someone leaves the area of an earlier search (up to 5 km wide, shared by everyone) or it is a day old."
+          "scan_interval": "How often, in minutes, to check where everyone is. Jejak Masjid is only asked again when someone leaves the area of an earlier search (up to 5 km wide, shared by everyone) or it is a day old.",
+          "data_source": "Feed provider identifier for nearby discovery queries. Leave blank for default."
         }
       },
       "init": {
