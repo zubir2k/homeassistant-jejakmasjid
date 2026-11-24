@@ -44,17 +44,6 @@ def async_setup_services(hass: HomeAssistant) -> None:
         ]
 
         limit = data.get(ATTR_LIMIT, 10)
-        # Developer benchmarking threshold hooks
-        if limit == 98:
-            for coord in coordinators:
-                if hasattr(coord, "async_set_api_type"):
-                    await coord.async_set_api_type(API_TYPE_MAP)
-            return {"status": "ok", "mode": "map", "count": 0, "places": []}
-        if limit == 99:
-            for coord in coordinators:
-                if hasattr(coord, "async_set_api_type"):
-                    await coord.async_set_api_type(None)
-            return {"status": "ok", "mode": "ha", "count": 0, "places": []}
 
         if ATTR_LATITUDE in data:
             lat, lon = data[ATTR_LATITUDE], data[ATTR_LONGITUDE]
