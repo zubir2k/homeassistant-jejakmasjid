@@ -1,5 +1,5 @@
 // Jejak Masjid stats card: one person's journey stats from a linked Jejak Masjid account.
-const BASE = new URL(".", import.meta.url).pathname.replace(/\/$/, "");
+const BASE = new URL(".", import.meta.url).href.replace(/\/$/, "");
 const PRAYERS = ["subuh", "zohor", "asar", "maghrib", "isyak"];
 const T = {
   en: { glance: "Journey at a glance", masjids: "Masjids visited", checkins: "Check-ins", streak: "Current streak", points: "Points",
