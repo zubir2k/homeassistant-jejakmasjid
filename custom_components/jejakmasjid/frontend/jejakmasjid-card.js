@@ -4,7 +4,7 @@
  * Ships inside custom_components/jejakmasjid and is loaded automatically.
  * Map: Leaflet 1.9.4 (BSD-2) with OpenStreetMap tiles. Logo and marker art: Jejak Masjid's own.
  */
-const BASE = new URL(".", import.meta.url).pathname.replace(/\/$/, "");
+const BASE = new URL(".", import.meta.url).href.replace(/\/$/, "");
 const VERSION = new URL(import.meta.url).searchParams.get("v") || "dev";
 const CARD_TYPE = "custom:jejakmasjid-card";
 
