@@ -9,7 +9,7 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from jejakmasjid import API_TYPE_MAP, JejakMasjidError, async_fetch_nearby, rank
+from jejakmasjid import JejakMasjidError, async_fetch_nearby, rank
 from .const import DEFAULT_RADIUS, DOMAIN, MAX_RADIUS, MIN_RADIUS, PLACE_TYPES
 
 SERVICE_FIND_NEARBY = "find_nearby"
@@ -42,8 +42,6 @@ def async_setup_services(hass: HomeAssistant) -> None:
             for entry in hass.config_entries.async_entries(DOMAIN)
             if getattr(entry, "runtime_data", None) is not None
         ]
-
-        limit = data.get(ATTR_LIMIT, 10)
 
         if ATTR_LATITUDE in data:
             lat, lon = data[ATTR_LATITUDE], data[ATTR_LONGITUDE]

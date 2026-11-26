@@ -14,7 +14,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from jejakmasjid import API_TYPE_MAP, JejakMasjidError, async_fetch_nearby, haversine_km, rank
+from jejakmasjid import JejakMasjidError, async_fetch_nearby, haversine_km, rank
 from .const import (
     CACHE_STORAGE_VERSION,
     CACHE_TTL_HOURS,
